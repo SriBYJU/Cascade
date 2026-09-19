@@ -65,6 +65,11 @@ class EvaluationHarness:
         executable = shutil.which(command[0])
         if not executable:
             return None
+        if (
+            platform.system() == "Windows"
+            and executable.lower().endswith((".cmd", ".bat"))
+        ):
+            return None
         resolved = [executable, *command[1:]]
         result = run_command(
             resolved,
