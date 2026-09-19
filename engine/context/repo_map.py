@@ -99,11 +99,16 @@ def _git(root: Path, *args: str) -> str:
 def repository_fingerprint(root: str | Path) -> str:
     root = Path(root).resolve()
     head = _git(root, "rev-parse", "HEAD") or "no-head"
-    status = _git(
+    raw_status = _git(
         root,
         "status",
         "--porcelain=v1",
         "--untracked-files=all",
+    )
+    status = "\n".join(
+        line
+        for line in raw_status.splitlines()
+        if ".cascade/" not in line.replace("\\", "/")
     )
     payload = f"{root}\n{head}\n{status}".encode()
     return hashlib.sha256(payload).hexdigest()
