@@ -151,7 +151,7 @@ Any future public savings claim must publish the task list, exact policy lock, m
 
 ## Current Codex compatibility assumptions
 
-The repository was aligned against current OpenAI documentation on 2026-09-19: project custom agents live under `.codex/agents/`, custom agents can select model/reasoning effort/sandbox behavior, `codex exec --json` emits JSONL events and usage, and plugin manifests use `.codex-plugin/plugin.json`. These interfaces evolve, so `optimizer doctor` and release CI treat platform drift as an explicit risk.
+The repository was re-verified against current OpenAI documentation on 2026-09-19: project custom agents live under `.codex/agents/`; custom agents can select model, reasoning effort, and sandbox behavior; `codex exec --json` emits JSONL events including token/cache usage; and new portable Agent Plugins use a root `plugin.json` with the Agent Plugins schema. Cascade also keeps `.codex-plugin/plugin.json` as the supported Codex compatibility fallback. These interfaces evolve, so `optimizer doctor` and release CI treat platform drift as an explicit risk.
 
 ## Development
 

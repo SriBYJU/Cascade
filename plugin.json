@@ -1,0 +1,44 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "cascade",
+  "version": "0.1.0",
+  "description": "Adaptive model, reasoning, context, verification, and parallel-work orchestration for Codex.",
+  "author": {
+    "name": "SriBYJU",
+    "url": "https://github.com/SriBYJU"
+  },
+  "homepage": "https://github.com/SriBYJU/Cascade",
+  "repository": "https://github.com/SriBYJU/Cascade",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "orchestration",
+    "routing",
+    "agents",
+    "verification"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Cascade",
+        "shortDescription": "Adaptive orchestration for Codex",
+        "longDescription": "Routes each coding step to the least-expensive capable model or deterministic tool, minimizes context transfer, isolates concurrent writes, verifies outcomes, and learns only from admitted evidence.",
+        "developerName": "SriBYJU",
+        "category": "Productivity",
+        "capabilities": [
+          "Adaptive routing",
+          "Multi-agent orchestration",
+          "Verification",
+          "Local-first tracing"
+        ],
+        "websiteURL": "https://github.com/SriBYJU/Cascade",
+        "defaultPrompt": [
+          "Use Cascade to plan and route this coding task.",
+          "Run this task with minimum safe model usage.",
+          "Explain why Cascade chose each route."
+        ],
+        "brandColor": "#0B1220"
+      }
+    }
+  }
+}
