@@ -233,3 +233,66 @@ def test_parallel_live_summary_records_system_metrics(tmp_path: Path):
     assert "parallel_retries_mean" in row
     assert "merge_conflicts_observed" in row
     assert row["all_verified"] is True
+
+
+
+def test_parallel_live_report_records_controlled_profiles(
+    tmp_path: Path,
+):
+    from engine.schemas import Capability, ModelProfile
+
+    profiles = {
+        Capability.BUILD: ModelProfile(
+            model_id="controlled-build",
+            capability=Capability.BUILD,
+            reasoning_efforts=[ReasoningEffort.MEDIUM],
+        )
+    }
+    scenario = ParallelLiveScenario(
+        scenario_id="profile",
+        files={
+            "pyproject.toml": (
+                '[project]\nname="fixture"\nversion="0.0.0"\n'
+                '[tool.pytest.ini_options]\ntestpaths=["tests"]\n'
+            ),
+            "alpha.py": "def alpha():\n    return 1\n",
+            "beta.py": "def beta():\n    return 2\n",
+            "tests/test_smoke.py": "def test_smoke():\n    assert True\n",
+        },
+        tasks=(
+            ParallelLiveTask(
+                "alpha",
+                "Fix alpha.py so alpha() returns 10.",
+                ("alpha.py",),
+                (
+                    (
+                        "python",
+                        "-c",
+                        "from alpha import alpha; assert alpha() == 10",
+                    ),
+                ),
+            ),
+            ParallelLiveTask(
+                "beta",
+                "Fix beta.py so beta() returns 20.",
+                ("beta.py",),
+                (
+                    (
+                        "python",
+                        "-c",
+                        "from beta import beta; assert beta() == 20",
+                    ),
+                ),
+            ),
+        ),
+    )
+    report = ParallelLiveHarness(
+        tmp_path,
+        adapter=ParallelFakeAdapter(synchronize=False),
+        profiles=profiles,
+    ).run(
+        [scenario],
+        repeats=1,
+        max_workers=2,
+    )
+    assert report["model_profiles"][0]["model_id"] == "controlled-build"

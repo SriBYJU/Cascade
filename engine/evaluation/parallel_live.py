@@ -13,7 +13,7 @@ from ..observability.redaction import metadata_only_payload
 from ..router.capability_registry import CapabilityRegistry
 from ..router.router import Router
 from ..runtime import CascadeRuntime
-from ..schemas import Capability
+from ..schemas import Capability, ModelProfile
 from ..scheduler.dag import TaskNode
 from ..scheduler.executor import (
     ParallelTaskSpec,
@@ -106,10 +106,12 @@ class ParallelLiveHarness:
         repo_root: str | Path,
         adapter: ModelAdapter | None = None,
         full_trace: bool = False,
+        profiles: dict[Capability, ModelProfile] | None = None,
     ):
         self.repo_root = Path(repo_root).resolve()
         self.adapter: ModelAdapter = adapter or CodexAdapter()
         self.full_trace = full_trace
+        self.profiles = profiles or {}
 
     @staticmethod
     def _init_repo(
@@ -214,6 +216,14 @@ class ParallelLiveHarness:
             self._init_repo(scenario, root)
             runtime = CascadeRuntime(root)
             runtime.codex = self.adapter
+            if self.profiles:
+                runtime.registry = CapabilityRegistry(
+                    profiles=self.profiles
+                )
+                runtime.router = Router(
+                    runtime.registry,
+                    runtime.budgets,
+                )
             if model != "auto":
                 overrides: dict[Capability, str] = {
                     capability: model
@@ -468,6 +478,19 @@ class ParallelLiveHarness:
             ),
             "repeats": repeats,
             "model": model,
+            "model_profiles": (
+                [
+                    profile.model_dump(mode="json")
+                    for profile in sorted(
+                        self.profiles.values(),
+                        key=lambda item: CapabilityRegistry.order(
+                            item.capability
+                        ),
+                    )
+                ]
+                if self.profiles
+                else None
+            ),
             "runs": runs,
             "summary": summary,
         }

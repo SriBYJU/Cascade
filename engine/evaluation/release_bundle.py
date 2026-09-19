@@ -88,7 +88,10 @@ def run_release_benchmark(
         root / "benchmarks" / "fixtures" / "parallel_live.json"
     )
     config = CascadeConfig.load(root)
-    parallel_report = ParallelLiveHarness(root).run(
+    parallel_report = ParallelLiveHarness(
+        root,
+        profiles=profiles,
+    ).run(
         scenarios,
         repeats=repeats,
         model="auto",
