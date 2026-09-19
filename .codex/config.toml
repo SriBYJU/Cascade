@@ -1,10 +1,10 @@
 [agents]
 enabled = true
 max_concurrent_threads_per_session = 3
-# Cascade resolves capability classes at runtime. These remain unset by default.
-# default_subagent_model = "gpt-5.6-terra"
-# default_subagent_reasoning_effort = "medium"
+# Cascade resolves capability classes at runtime. Concrete subagent model
+# defaults remain inherited unless the user explicitly maps a capability.
 
-[goals]
-# Feature-probed by `optimizer doctor`; kept conservative and optional.
-max_goal_token_budget = 50000
+[features]
+# Current Codex docs expose long-running goals behind this supported flag.
+# Cascade does not invent or depend on an undocumented native goal-token budget.
+goals = true
