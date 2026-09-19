@@ -121,7 +121,7 @@ def compare_summaries(
     return comparisons
 
 
-def _fmt_percent(value: object) -> str:
+def _fmt_percent(value: Any) -> str:
     if value is None:
         return "n/a"
     return f"{float(value) * 100:+.2f}%"
