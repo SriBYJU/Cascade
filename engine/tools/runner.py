@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
+import sys
 import time
 from pathlib import Path
 from typing import Mapping, Sequence
@@ -16,6 +18,17 @@ def _cap(text: str, limit: int) -> tuple[str, bool]:
     return text[:half] + "\n...<truncated>...\n" + text[-half:], True
 
 
+def _resolve_command(command: Sequence[str]) -> list[str]:
+    resolved = list(command)
+    if (
+        resolved[0] in {"python", "python3"}
+        and shutil.which(resolved[0]) is None
+        and Path(sys.executable).is_file()
+    ):
+        resolved[0] = sys.executable
+    return resolved
+
+
 def run_command(
     command: Sequence[str],
     cwd: str | Path,
@@ -27,13 +40,14 @@ def run_command(
 ) -> CommandResult:
     if not command:
         raise ValueError("command must not be empty")
+    resolved_command = _resolve_command(command)
     start = time.monotonic()
     merged_env = os.environ.copy() if inherit_env else {}
     if env:
         merged_env.update(env)
     try:
         proc = subprocess.run(
-            list(command),
+            resolved_command,
             cwd=str(cwd),
             env=merged_env,
             text=True,
@@ -45,7 +59,7 @@ def run_command(
         out, trunc1 = _cap(proc.stdout or "", output_cap_chars)
         err, trunc2 = _cap(proc.stderr or "", output_cap_chars)
         return CommandResult(
-            command=list(command),
+            command=resolved_command,
             cwd=str(Path(cwd).resolve()),
             exit_code=proc.returncode,
             stdout=out,
@@ -58,7 +72,7 @@ def run_command(
         out, trunc1 = _cap((exc.stdout or "") if isinstance(exc.stdout, str) else "", output_cap_chars)
         err, trunc2 = _cap((exc.stderr or "") if isinstance(exc.stderr, str) else "", output_cap_chars)
         return CommandResult(
-            command=list(command),
+            command=resolved_command,
             cwd=str(Path(cwd).resolve()),
             exit_code=None,
             stdout=out,
@@ -67,3 +81,4 @@ def run_command(
             timed_out=True,
             truncated=trunc1 or trunc2,
         )
+

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import importlib.util
 import shutil
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -174,44 +176,68 @@ def _package_manager(root: Path, package_root: Path) -> str | None:
     return "npm" if shutil.which("npm") else None
 
 
+def _python_command() -> tuple[str, ...] | None:
+    if shutil.which("python"):
+        return ("python",)
+    executable = Path(sys.executable)
+    return (str(executable),) if executable.is_file() else None
+
+
+def _python_tool_command(
+    tool: str,
+    python_command: tuple[str, ...] | None,
+) -> tuple[str, ...] | None:
+    if shutil.which(tool):
+        return (tool,)
+    if (
+        python_command is not None
+        and importlib.util.find_spec(tool) is not None
+    ):
+        return (*python_command, "-m", tool)
+    return None
+
+
 def discover_validators(root: str | Path) -> list[ValidatorSpec]:
     root = Path(root).resolve()
     specs: list[ValidatorSpec] = []
+    python_command = _python_command()
+    ruff_command = _python_tool_command("ruff", python_command)
+    mypy_command = _python_tool_command("mypy", python_command)
 
     for project_root in _python_roots(root):
         cwd = _scope_cwd(root, project_root)
-        if shutil.which("python"):
+        if python_command is not None:
             specs.append(
                 ValidatorSpec(
                     _scope_name(root, project_root, "python-compile"),
-                    ("python", "-m", "compileall", "-q", "."),
+                    (*python_command, "-m", "compileall", "-q", "."),
                     "parser",
                     cwd,
                 )
             )
-        if _uses_pytest(project_root) and shutil.which("python"):
+        if _uses_pytest(project_root) and python_command is not None:
             specs.append(
                 ValidatorSpec(
                     _scope_name(root, project_root, "pytest"),
-                    ("python", "-m", "pytest", "-q"),
+                    (*python_command, "-m", "pytest", "-q"),
                     "tests",
                     cwd,
                 )
             )
-        if _uses_ruff(project_root) and shutil.which("ruff"):
+        if _uses_ruff(project_root) and ruff_command is not None:
             specs.append(
                 ValidatorSpec(
                     _scope_name(root, project_root, "ruff"),
-                    ("ruff", "check", "."),
+                    (*ruff_command, "check", "."),
                     "lint",
                     cwd,
                 )
             )
-        if _uses_mypy(project_root) and shutil.which("mypy"):
+        if _uses_mypy(project_root) and mypy_command is not None:
             specs.append(
                 ValidatorSpec(
                     _scope_name(root, project_root, "mypy"),
-                    ("mypy", "."),
+                    (*mypy_command, "."),
                     "types",
                     cwd,
                 )
@@ -271,3 +297,4 @@ def discover_validators(root: str | Path) -> list[ValidatorSpec]:
             )
         )
     return specs
+
