@@ -37,8 +37,8 @@ jobs:
       - name: Install Cascade
         run: python -m pip install -e ".[dev]"
 
-      - name: Install current Codex CLI alpha
-        run: npm install -g @openai/codex@alpha --no-audit --no-fund
+      - name: Install current stable Codex CLI
+        run: npm install -g @openai/codex --no-audit --no-fund
 
       - name: Verify current Codex surfaces
         run: |
