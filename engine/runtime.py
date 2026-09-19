@@ -164,7 +164,7 @@ class CascadeRuntime:
                 ),
                 payload=stored_payload,
                 metrics=metrics or {},
-                payload_redacted=(metadata_only or redacted),
+                payload_redacted=metadata_only,
             )
         )
 

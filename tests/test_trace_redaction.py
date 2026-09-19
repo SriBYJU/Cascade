@@ -95,6 +95,12 @@ def test_full_trace_mode_is_explicit_opt_in(tmp_path: Path):
     serialized = str(trace)
 
     assert SECRET in serialized
+    worker = [
+        event
+        for event in trace
+        if event["event"] == "worker_completed"
+    ][0]
+    assert worker["payload_redacted"] is False
 
 
 def test_invalid_trace_content_fails_closed(tmp_path: Path):
