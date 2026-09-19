@@ -47,7 +47,7 @@ def _ram_bytes() -> int | None:
 
             status = MemoryStatus()
             status.dwLength = ctypes.sizeof(MemoryStatus)
-            kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
+            kernel32 = ctypes.windll.kernel32
             if kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
                 return int(status.ullTotalPhys)
             return None
