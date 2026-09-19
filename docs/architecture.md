@@ -40,3 +40,8 @@ The repository map now persists an exact-fingerprint local cache under `.cascade
 ## High-risk reviewer trajectory step
 
 After deterministic validation succeeds, HIGH and CRITICAL write tasks now enter a separate read-only reviewer step before becoming merge-ready. The reviewer sees a capped diff plus machine-validation evidence, runs with an explicit read-only sandbox, and must return structured JSON. Malformed reviewer output, adapter failure, or a material reviewer finding blocks the task. Low-risk bounded changes retain the fast lane and skip this expensive review step.
+
+
+## Architect preflight for ambiguous/critical writes
+
+Ambiguous write tasks and CRITICAL writes now invoke a separate read-only architect before any worktree writer starts. The architect receives the bounded Task Envelope and Context Firewall evidence, resolves the cross-cutting decision into structured constraints, and those constraints are injected into the writer envelope. A failed or malformed required preflight blocks the task instead of letting a builder guess. Resume checkpoints preserve the architect decision so it is not repeatedly re-spent after interruption.
