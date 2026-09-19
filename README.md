@@ -40,7 +40,13 @@ Cascade treats models as heterogeneous compute, context as scarce bandwidth, det
 - Bounded DAG/concurrency and token/context budget reservation.
 - Codex `exec --json` adapter plus optional Ollama/vLLM adapter boundaries.
 - Local `doctor`, `plan`, `run`, `resume`, `shadow`, `status`, `trace`, `why`, `stats`, `models`, `cache`, `benchmark`, and `cleanup` commands.
-- 23-task live benchmark suite, deterministic micro-routing benchmark, controlled baselines/ablations, and acceptance-oriented automated tests.
+- Explicit read-only architect preflight for ambiguous/critical writes and read-only reviewer gates for high/critical verified changes.
+- Metadata-only local traces by default, repository-symlink boundaries, sanitized validator environments, protected control-plane paths, and conservative tool-risk classification.
+- Safe project install/status/uninstall with preflight conflict detection, receipts, backups, and user-edit preservation.
+- 23-task live benchmark suite, deterministic micro-routing benchmark, controlled baselines/ablations, pass@1/pass@3, VWET, and sequential-vs-parallel evidence.
+- `optimizer savings` plus release-grade public-claim guards so small demos cannot become headline benchmark claims.
+- Current stable Codex marketplace smoke test using the public GitHub source, plus cross-platform CI on Linux/macOS/Windows and Python 3.11/3.12/3.13.
+- Trusted-publishing/attestation release workflow, wheel inspection, and `optimizer release-gate`.
 
 ## 60-second local quickstart
 
