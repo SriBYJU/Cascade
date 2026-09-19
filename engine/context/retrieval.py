@@ -6,6 +6,7 @@ from pathlib import Path
 
 from ..schemas import EvidenceRef, RepoFile, RepoMap
 from .provenance import provenance_for_path
+from .safe_path import safe_repo_path
 
 TOKEN_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_./:-]*")
 
@@ -113,7 +114,13 @@ def collect_evidence(
     evidence: list[EvidenceRef] = []
     terms = _tokens(query)
     for file in rank_files(repo_map, query, max_files):
-        path = root / file.path
+        path = safe_repo_path(
+            root,
+            file.path,
+            require_file=True,
+        )
+        if path is None:
+            continue
         try:
             lines = path.read_text(
                 encoding="utf-8",
@@ -175,7 +182,13 @@ def collect_broad_evidence(
     chosen = (ranked + remaining)[:max_files]
     evidence: list[EvidenceRef] = []
     for file in chosen:
-        path = root / file.path
+        path = safe_repo_path(
+            root,
+            file.path,
+            require_file=True,
+        )
+        if path is None:
+            continue
         try:
             lines = path.read_text(
                 encoding="utf-8",
