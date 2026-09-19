@@ -64,3 +64,36 @@ def test_unmeasured_markdown_does_not_invent_numbers():
     )
     assert "not measured" in rendered
     assert "Codex unavailable" in rendered
+
+
+
+def test_vwet_is_derived_from_verified_work_and_weighted_usage():
+    from engine.evaluation.models import TrialResult, aggregate_trials
+
+    summary = aggregate_trials(
+        [
+            TrialResult(
+                case_id="a",
+                category="x",
+                config="cascade",
+                repeat=1,
+                verified_success=True,
+                failure_kind=None,
+                wall_time_ms=1,
+                weighted_usage=500.0,
+            ),
+            TrialResult(
+                case_id="b",
+                category="x",
+                config="cascade",
+                repeat=1,
+                verified_success=False,
+                failure_kind="task",
+                wall_time_ms=1,
+                weighted_usage=500.0,
+            ),
+        ]
+    )
+    assert summary["cascade"][
+        "verified_work_per_1k_weighted_tokens"
+    ] == 1.0

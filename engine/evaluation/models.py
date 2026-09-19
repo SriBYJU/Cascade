@@ -133,10 +133,16 @@ def aggregate_trials(trials: list[TrialResult]) -> dict[str, Any]:
             float(item.trajectory_steps) for item in items
         ]
         successes = sum(1 for item in items if item.verified_success)
+        verified_rate = (
+            successes / len(items) if items else 0.0
+        )
+        weighted_mean = (
+            statistics.mean(weighted) if weighted else 0.0
+        )
         result[config] = {
             "trials": len(items),
             "verified_successes": successes,
-            "verified_success_rate": successes / len(items) if items else 0.0,
+            "verified_success_rate": verified_rate,
             "wall_time_ms_mean": statistics.mean(wall) if wall else 0.0,
             "wall_time_ms_stdev": _stdev(wall),
             "total_model_tokens_mean": statistics.mean(total_tokens)
@@ -150,10 +156,13 @@ def aggregate_trials(trials: list[TrialResult]) -> dict[str, Any]:
                 statistics.mean(worker_tokens) if worker_tokens else 0.0
             ),
             "cached_input_tokens_mean": statistics.mean(cached) if cached else 0.0,
-            "weighted_usage_mean": statistics.mean(weighted)
-            if weighted
-            else 0.0,
+            "weighted_usage_mean": weighted_mean,
             "weighted_usage_stdev": _stdev(weighted),
+            "verified_work_per_1k_weighted_tokens": (
+                verified_rate * 1000.0 / weighted_mean
+                if weighted_mean > 0
+                else None
+            ),
             "context_bytes_mean": (
                 statistics.mean(context) if context else 0.0
             ),

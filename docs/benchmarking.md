@@ -157,3 +157,8 @@ The command requires at least three repeats and produces the live controlled-mod
 Benchmark trajectories are metadata-only by default. Content-bearing fields such as model messages, errors, stdout/stderr, reviewer prose, and worker output are replaced with type/size/SHA-256 metadata before they are written to benchmark artifacts. This keeps the default privacy posture consistent with normal Cascade traces.
 
 For synthetic/public fixtures where publishing full model/tool content is intentional, pass `--full-trace` to `optimizer benchmark`. Treat that flag as an explicit disclosure choice; do not use it on proprietary repositories or sensitive manifests unless the resulting artifacts are handled accordingly.
+
+
+## Verified Work per Expensive Token (VWET)
+
+Cascade reports the master-plan north-star metric as **verified work per 1,000 weighted model tokens**. It is derived from deterministic verified-success rate divided by mean weighted model usage; it is an internal optimization metric, not a universal scientific unit. Savings reports show the percentage change in VWET against the selected baseline alongside raw token, weighted-usage, context-transfer, wall-time, and quality changes.

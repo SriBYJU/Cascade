@@ -91,6 +91,22 @@ def savings_summary(
     candidate_agents = _number(
         candidate_data.get("agent_calls_mean")
     )
+    baseline_vwet = baseline_data.get(
+        "verified_work_per_1k_weighted_tokens"
+    )
+    candidate_vwet = candidate_data.get(
+        "verified_work_per_1k_weighted_tokens"
+    )
+    baseline_vwet_num = (
+        float(baseline_vwet)
+        if isinstance(baseline_vwet, (int, float))
+        else 0.0
+    )
+    candidate_vwet_num = (
+        float(candidate_vwet)
+        if isinstance(candidate_vwet, (int, float))
+        else 0.0
+    )
 
     token_savings = _saved_percent(
         baseline_tokens,
@@ -111,6 +127,15 @@ def savings_summary(
     context_savings = _saved_percent(
         baseline_context,
         candidate_context,
+    )
+    vwet_improvement = (
+        (
+            (candidate_vwet_num - baseline_vwet_num)
+            / baseline_vwet_num
+        )
+        * 100.0
+        if baseline_vwet_num > 0
+        else None
     )
     quality_delta_pp = (
         candidate_quality - baseline_quality
@@ -143,6 +168,13 @@ def savings_summary(
         "wall_time_savings_percent": wall_savings,
         "head_model_token_savings_percent": head_savings,
         "context_transfer_savings_percent": context_savings,
+        "vwet_improvement_percent": vwet_improvement,
+        "baseline_vwet_per_1k": (
+            baseline_vwet_num if baseline_vwet_num > 0 else None
+        ),
+        "candidate_vwet_per_1k": (
+            candidate_vwet_num if candidate_vwet_num > 0 else None
+        ),
         "baseline_tokens_mean": baseline_tokens,
         "candidate_tokens_mean": candidate_tokens,
         "tokens_saved_mean": baseline_tokens - candidate_tokens,
@@ -181,6 +213,7 @@ def render_savings(summary: dict[str, Any]) -> str:
     wall = summary.get("wall_time_savings_percent")
     head = summary.get("head_model_token_savings_percent")
     context = summary.get("context_transfer_savings_percent")
+    vwet = summary.get("vwet_improvement_percent")
     quality_delta = summary.get("quality_delta_percentage_points")
     cached_delta = summary.get("cached_input_tokens_delta_mean")
 
@@ -193,6 +226,7 @@ def render_savings(summary: dict[str, Any]) -> str:
         f"Weighted model-use saving: {_fmt_percent(weighted)}",
         f"Head-model token saving:   {_fmt_percent(head)}",
         f"Context-transfer saving:   {_fmt_percent(context)}",
+        f"VWET improvement:          {_fmt_percent(vwet)}",
         f"Wall-time saving:          {_fmt_percent(wall)}",
         (
             "Verified success:         "
