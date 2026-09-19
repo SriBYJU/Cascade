@@ -62,3 +62,8 @@ See `examples/model-profiles.example.json` for a provider-neutral fixture.
 ## Monorepo-aware validator discovery
 
 Validator specifications now carry an explicit repository-relative working directory. Cascade discovers root and conventional nested Python projects, parses npm/yarn/pnpm workspace package patterns, and runs each declared test/lint/typecheck command in the owning subproject rather than assuming the repository root. Workspace paths are resolved inside the repository and traversal patterns are ignored. This keeps validation deterministic while supporting common monorepo layouts without executing undeclared framework-specific commands.
+
+
+## Go and Rust structural extraction
+
+The lightweight Context Firewall index now has language-specific extraction for Go and Rust instead of treating both as generic text. Go indexing captures functions, methods, types, import blocks, the local `go.mod` module path, and resolves local package imports to repository files. Rust indexing captures functions/types/traits/modules plus `use` and `mod` declarations, with conservative resolution for `crate::`, `self::`, `super::`, and sibling module files. Malformed files fail soft and remain indexable as text rather than aborting repository mapping.
