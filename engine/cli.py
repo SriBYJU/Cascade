@@ -16,7 +16,11 @@ from .evaluation.parallel_live import (
     ParallelLiveHarness,
     load_parallel_scenarios,
 )
-from .evaluation.report import load_report, measured_policy_certificate
+from .evaluation.report import (
+    load_report,
+    measured_policy_certificate,
+    render_markdown_report,
+)
 from .observability.render import (
     render_plan,
     render_stats,
@@ -186,6 +190,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--effort",
         choices=[effort.value for effort in ReasoningEffort],
         default=ReasoningEffort.MEDIUM.value,
+    )
+
+    p = sub.add_parser(
+        "benchmark-card",
+        help="render a measured benchmark report as Markdown",
+    )
+    p.add_argument("report", help="path to report.json")
+    p.add_argument(
+        "--output",
+        help="output Markdown path; defaults beside the report",
     )
 
     policy = sub.add_parser(
@@ -538,6 +552,26 @@ def main(argv: list[str] | None = None) -> int:
             }
         )
         return 0 if report.get("measured") else 2
+    if args.command == "benchmark-card":
+        report_path = repo / args.report
+        report = load_report(report_path)
+        output = (
+            repo / args.output
+            if args.output
+            else report_path.with_suffix(".md")
+        )
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(render_markdown_report(report))
+        _print(
+            {
+                "status": "written",
+                "report": str(report_path),
+                "output": str(output),
+                "measured": report.get("measured"),
+            }
+        )
+        return 0
+
     if args.command == "policy":
         active_path = repo / "policy.lock.yaml"
         current = load_policy(active_path)
