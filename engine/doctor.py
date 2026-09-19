@@ -88,7 +88,7 @@ def _plugin_probe(root: Path) -> dict[str, Any]:
                 result["portable_valid"] = (
                     raw.get("$schema")
                     == "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
-                    and raw.get("name") == "cascade"
+                    and raw.get("name") == "cascade-codex"
                     and isinstance(raw.get("version"), str)
                 )
     except (OSError, json.JSONDecodeError):
@@ -100,7 +100,7 @@ def _plugin_probe(root: Path) -> dict[str, Any]:
             if isinstance(raw, dict):
                 compat = raw
                 result["compat_valid"] = (
-                    raw.get("name") == "cascade"
+                    raw.get("name") == "cascade-codex"
                     and isinstance(raw.get("version"), str)
                 )
     except (OSError, json.JSONDecodeError):
