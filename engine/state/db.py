@@ -41,6 +41,15 @@ CREATE TABLE IF NOT EXISTS exact_cache (
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   hits INTEGER NOT NULL DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS prompt_affinity (
+  model_id TEXT NOT NULL,
+  prefix_key TEXT NOT NULL,
+  observations INTEGER NOT NULL DEFAULT 0,
+  input_tokens INTEGER NOT NULL DEFAULT 0,
+  cached_input_tokens INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY(model_id, prefix_key)
+);
 CREATE TABLE IF NOT EXISTS idempotency (
   operation_key TEXT PRIMARY KEY,
   status TEXT NOT NULL,
