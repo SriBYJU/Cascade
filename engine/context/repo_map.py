@@ -8,6 +8,7 @@ import subprocess
 from pathlib import Path
 
 from ..schemas import RepoFile, RepoMap
+from .safe_path import safe_repo_path
 
 SKIP_DIRS = {
     ".git",
@@ -249,8 +250,8 @@ def _python_module_for(path: str) -> str | None:
 
 
 def _go_module_name(root: Path) -> str | None:
-    path = root / "go.mod"
-    if not path.exists():
+    path = safe_repo_path(root, "go.mod", require_file=True)
+    if path is None:
         return None
     try:
         text = path.read_text(encoding="utf-8", errors="replace")
@@ -488,14 +489,24 @@ def build_repo_map(
 
     files: list[RepoFile] = []
     for current, dirs, names in os.walk(root):
+        current_path = Path(current)
         dirs[:] = [
             directory
             for directory in dirs
             if directory not in SKIP_DIRS
+            and not (current_path / directory).is_symlink()
         ]
         for name in names:
             path = Path(current) / name
             rel = path.relative_to(root).as_posix()
+            safe_path = safe_repo_path(
+                root,
+                rel,
+                require_file=True,
+            )
+            if safe_path is None:
+                continue
+            path = safe_path
             language = TEXT_EXTENSIONS.get(path.suffix.lower())
             if not language:
                 continue
