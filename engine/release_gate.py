@@ -80,6 +80,32 @@ def _benchmark_checks(
         f"{repeats} repeats (minimum 3)",
     )
 
+    configs_raw = report.get("configs", [])
+    configs = (
+        {str(item) for item in configs_raw}
+        if isinstance(configs_raw, list)
+        else set()
+    )
+    required_configs = {
+        "strongest",
+        "efficient",
+        "plain",
+        "cascade",
+        "cascade-no-context",
+        "cascade-no-cache",
+    }
+    missing_configs = sorted(required_configs - configs)
+    _check(
+        checks,
+        "benchmark-required-configs",
+        not missing_configs,
+        (
+            "all controlled baselines and ablations present"
+            if not missing_configs
+            else f"missing configs: {missing_configs}"
+        ),
+    )
+
     summary = report.get("summary")
     summary_dict = summary if isinstance(summary, dict) else {}
     plain = summary_dict.get("plain")
@@ -133,19 +159,30 @@ def _benchmark_checks(
     )
     trials = report.get("trials", [])
     raw_trace_count = 0
+    raw_trace_existing = 0
     if isinstance(trials, list):
-        raw_trace_count = sum(
-            1
-            for trial in trials
-            if isinstance(trial, dict) and trial.get("raw_trace")
-        )
+        for trial in trials:
+            if not isinstance(trial, dict):
+                continue
+            raw = trial.get("raw_trace")
+            if not raw:
+                continue
+            raw_trace_count += 1
+            raw_path = Path(str(raw))
+            if not raw_path.is_absolute():
+                raw_path = report_path.parent / raw_path
+            if raw_path.exists():
+                raw_trace_existing += 1
+    trial_count = len(trials) if isinstance(trials, list) else 0
     _check(
         checks,
         "raw-trajectories",
-        bool(trials) and raw_trace_count == len(trials),
+        bool(trials)
+        and raw_trace_count == trial_count
+        and raw_trace_existing == trial_count,
         (
-            f"{raw_trace_count}/{len(trials) if isinstance(trials, list) else 0} "
-            "trials reference raw trajectories"
+            f"{raw_trace_existing}/{trial_count} raw trajectory files exist "
+            f"({raw_trace_count} referenced)"
         ),
     )
 
@@ -159,6 +196,7 @@ def release_gate(
     repo_root: str | Path = ".",
     *,
     benchmark_report: str | Path | None = None,
+    parallel_report: str | Path | None = None,
 ) -> dict[str, Any]:
     root = Path(repo_root).resolve()
     checks: list[dict[str, Any]] = []
@@ -289,6 +327,97 @@ def release_gate(
             report_path = root / report_path
         savings = _benchmark_checks(report_path, checks)
 
+    if parallel_report is not None:
+        parallel_path = Path(parallel_report)
+        if not parallel_path.is_absolute():
+            parallel_path = root / parallel_path
+        try:
+            parallel_data: object = json.loads(
+                parallel_path.read_text()
+            )
+        except (OSError, json.JSONDecodeError) as exc:
+            _check(
+                checks,
+                "parallel-live-report",
+                False,
+                f"could not load parallel report: {exc}",
+            )
+        else:
+            if not isinstance(parallel_data, dict):
+                _check(
+                    checks,
+                    "parallel-live-report",
+                    False,
+                    "parallel report must be a JSON object",
+                )
+            else:
+                measured_parallel = (
+                    parallel_data.get("measured") is True
+                )
+                _check(
+                    checks,
+                    "parallel-live-report",
+                    measured_parallel,
+                    "parallel report is explicitly measured"
+                    if measured_parallel
+                    else "parallel report is not measured",
+                )
+                parallel_repeats = int(
+                    parallel_data.get("repeats", 0) or 0
+                )
+                _check(
+                    checks,
+                    "parallel-repeats",
+                    parallel_repeats >= 3,
+                    (
+                        f"{parallel_repeats} repeats "
+                        "(minimum 3)"
+                    ),
+                )
+                parallel_summary = parallel_data.get("summary")
+                summary_rows = (
+                    parallel_summary.values()
+                    if isinstance(parallel_summary, dict)
+                    else []
+                )
+                rows = [
+                    row
+                    for row in summary_rows
+                    if isinstance(row, dict)
+                ]
+                _check(
+                    checks,
+                    "parallel-verified",
+                    bool(rows)
+                    and all(
+                        row.get("all_verified") is True
+                        for row in rows
+                    ),
+                    (
+                        f"{len(rows)} scenario summaries; "
+                        "all must verify"
+                    ),
+                )
+                speedups = [
+                    float(row.get("speedup", 0.0))
+                    for row in rows
+                ]
+                mean_speedup = (
+                    sum(speedups) / len(speedups)
+                    if speedups
+                    else 0.0
+                )
+                _check(
+                    checks,
+                    "parallel-latency-target",
+                    mean_speedup >= 1.20,
+                    (
+                        f"mean speedup={mean_speedup:.3f}x; "
+                        "goal >=1.20x"
+                    ),
+                    required=False,
+                )
+
     required_failures = [
         item
         for item in checks
@@ -303,7 +432,10 @@ def release_gate(
         "engineering_ready": not required_failures
         if benchmark_report is None
         else not required_failures,
-        "measured_release_evidence": benchmark_report is not None
+        "measured_release_evidence": (
+            benchmark_report is not None
+            and parallel_report is not None
+        )
         and not [
             item
             for item in checks

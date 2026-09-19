@@ -53,6 +53,44 @@ def test_release_gate_checks_measured_report(tmp_path: Path):
           }
         }"""
     )
-    result = release_gate(root, benchmark_report=report)
+    raw_dir = tmp_path / "raw"
+    raw_dir.mkdir()
+    (raw_dir / "a.json").write_text("{}")
+    (raw_dir / "b.json").write_text("{}")
+    data = report.read_text().replace(
+        '"raw/a.json"',
+        f'"{(raw_dir / "a.json").as_posix()}"',
+    ).replace(
+        '"raw/b.json"',
+        f'"{(raw_dir / "b.json").as_posix()}"',
+    )
+    data = data.replace(
+        '"measured": true,',
+        '"measured": true,\n'
+        '          "configs": ["strongest","efficient","plain",'
+        '"cascade","cascade-no-context","cascade-no-cache"],',
+        1,
+    )
+    report.write_text(data)
+
+    parallel = tmp_path / "parallel.json"
+    parallel.write_text(
+        """{
+          "measured": true,
+          "repeats": 3,
+          "summary": {
+            "disjoint": {
+              "all_verified": true,
+              "speedup": 1.25
+            }
+          }
+        }"""
+    )
+
+    result = release_gate(
+        root,
+        benchmark_report=report,
+        parallel_report=parallel,
+    )
     assert result["measured_release_evidence"] is True
     assert result["savings"]["token_savings_percent"] == pytest.approx(30.0)

@@ -199,7 +199,8 @@ For a final measured release, provide the live benchmark report:
 
 ```bash
 optimizer release-gate \
-  --benchmark-report .cascade/benchmarks/live/report.json
+  --benchmark-report .cascade/benchmarks/live/report.json \
+  --parallel-report .cascade/release-benchmark/parallel-live.json
 ```
 
 The second form additionally requires a measured 20+ task report with at least three repeats, plain-vs-Cascade matched evidence, source commit, environment/policy metadata, and raw trajectory references. Performance targets are reported separately from hard engineering/safety gates.

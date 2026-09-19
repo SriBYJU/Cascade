@@ -108,6 +108,7 @@ def run_release_benchmark(
     gate = release_gate(
         root,
         benchmark_report=live_dir / "report.json",
+        parallel_report=parallel_path,
     )
     bundle = {
         "measured": True,

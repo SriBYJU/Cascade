@@ -303,6 +303,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--benchmark-report",
         help="optional measured live report.json for 1.0 evidence checks",
     )
+    p.add_argument(
+        "--parallel-report",
+        help=(
+            "optional measured parallel-live report; required with "
+            "--benchmark-report for final measured evidence"
+        ),
+    )
     p.add_argument("--json", action="store_true")
 
     p = sub.add_parser(
@@ -775,6 +782,7 @@ def main(argv: list[str] | None = None) -> int:
         result = release_gate(
             repo,
             benchmark_report=args.benchmark_report,
+            parallel_report=args.parallel_report,
         )
         if args.json:
             _print(result)
