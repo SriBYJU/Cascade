@@ -15,11 +15,15 @@ from engine.schemas import ReasoningEffort
 class ParallelFakeAdapter:
     name = "parallel-fake"
 
-    def __init__(self) -> None:
+    def __init__(self, *, synchronize: bool = True) -> None:
         self.lock = threading.Lock()
         self.active = 0
         self.max_active = 0
-        self.barrier = threading.Barrier(2)
+        self.barrier = (
+            threading.Barrier(2)
+            if synchronize
+            else None
+        )
 
     def available(self) -> bool:
         return True
@@ -39,7 +43,8 @@ class ParallelFakeAdapter:
             self.active += 1
             self.max_active = max(self.max_active, self.active)
         try:
-            self.barrier.wait(timeout=2)
+            if self.barrier is not None:
+                self.barrier.wait(timeout=2)
             time.sleep(0.05)
             if sandbox_mode == "workspace-write":
                 if '"goal": "Fix alpha.py' in prompt:
@@ -213,7 +218,7 @@ def test_parallel_live_summary_records_system_metrics(tmp_path: Path):
     )
     report = ParallelLiveHarness(
         tmp_path,
-        adapter=ParallelFakeAdapter(),
+        adapter=ParallelFakeAdapter(synchronize=False),
     ).run(
         [scenario],
         repeats=1,
