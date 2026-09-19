@@ -77,6 +77,13 @@ def test_parallel_live_harness_overlaps_disjoint_writers(tmp_path: Path):
             ),
             "alpha.py": "def alpha():\n    return 1\n",
             "beta.py": "def beta():\n    return 2\n",
+            "tests/test_smoke.py": (
+                "from alpha import alpha\n"
+                "from beta import beta\n\n"
+                "def test_imports():\n"
+                "    assert isinstance(alpha(), int)\n"
+                "    assert isinstance(beta(), int)\n"
+            ),
         },
         tasks=(
             ParallelLiveTask(

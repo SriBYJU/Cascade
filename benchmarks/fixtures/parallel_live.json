@@ -6,7 +6,7 @@
       "alpha.py": "def alpha():\n    return 1\n",
       "beta.py": "def beta():\n    return 2\n",
       "gamma.py": "def gamma():\n    return 3\n",
-      "tests/test_values.py": "from alpha import alpha\nfrom beta import beta\nfrom gamma import gamma\n\n\ndef test_values():\n    assert alpha() == 10\n    assert beta() == 20\n    assert gamma() == 30\n"
+      "tests/test_smoke.py": "from alpha import alpha\nfrom beta import beta\nfrom gamma import gamma\n\n\ndef test_imports_and_types():\n    assert isinstance(alpha(), int)\n    assert isinstance(beta(), int)\n    assert isinstance(gamma(), int)\n"
     },
     "tasks": [
       {
