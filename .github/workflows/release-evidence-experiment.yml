@@ -13,10 +13,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 330
     env:
-      CODEX_HOME: ${{ runner.temp }}/codex-home
       CASCADE_MAX_WORKERS: "3"
 
     steps:
+      - name: Initialize isolated Codex home
+        run: |
+          set -euo pipefail
+          echo "CODEX_HOME=$RUNNER_TEMP/codex-home" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/codex-home"
+
       - name: Check out exact release candidate
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
