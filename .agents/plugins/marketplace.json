@@ -5,7 +5,7 @@
   },
   "plugins": [
     {
-      "name": "cascade",
+      "name": "cascade-codex",
       "source": {
         "source": "local",
         "path": "./"

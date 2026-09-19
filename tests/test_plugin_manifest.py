@@ -8,7 +8,7 @@ def test_portable_plugin_manifest_is_canonical():
     assert data["$schema"] == (
         "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
     )
-    assert data["name"] == "cascade"
+    assert data["name"] == "cascade-codex"
     assert data["version"].count(".") == 2
     assert data["author"]["name"]
     interface = data["extensions"]["com.openai"]["interface"]

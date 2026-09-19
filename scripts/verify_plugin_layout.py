@@ -30,7 +30,7 @@ def main() -> int:
     assert portable["$schema"] == (
         "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
     )
-    assert portable["name"] == compat["name"] == "cascade"
+    assert portable["name"] == compat["name"] == "cascade-codex"
     assert portable["version"] == compat["version"]
     assert portable["description"] == compat["description"]
 
@@ -60,7 +60,7 @@ def main() -> int:
     entries = marketplace.get("plugins", [])
     assert isinstance(entries, list) and len(entries) == 1
     entry = entries[0]
-    assert entry["name"] == "cascade"
+    assert entry["name"] == "cascade-codex"
     assert entry["source"] == {"source": "local", "path": "./"}
     assert entry["policy"]["installation"] in {
         "AVAILABLE",

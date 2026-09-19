@@ -1,6 +1,6 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-  "name": "cascade",
+  "name": "cascade-codex",
   "version": "0.1.0",
   "description": "Adaptive model, reasoning, context, verification, and parallel-work orchestration for Codex.",
   "author": {

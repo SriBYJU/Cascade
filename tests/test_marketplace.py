@@ -11,7 +11,7 @@ def test_repository_marketplace_points_to_plugin_root():
     assert data["interface"]["displayName"] == "Cascade Local"
     assert len(data["plugins"]) == 1
     entry = data["plugins"][0]
-    assert entry["name"] == "cascade"
+    assert entry["name"] == "cascade-codex"
     assert entry["source"] == {
         "source": "local",
         "path": "./",
