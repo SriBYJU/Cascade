@@ -119,11 +119,11 @@ Relative deltas remain `n/a` when the baseline denominator is zero. The Markdown
 
 ## Controlled model-pool baselines
 
-For a real model-routing experiment, pass a provider-neutral capability profile file rather than leaving every capability mapped to `auto`. The same pool is then available to Cascade and to fixed direct baselines:
+For a real model-routing experiment, copy the example profile file and replace every placeholder with a model ID that the authenticated environment actually accepts. Do not use the example IDs as evidence. Pass that provider-neutral capability profile file rather than leaving capabilities mapped to `auto`. The same pool is then available to Cascade and to fixed direct baselines:
 
 ```bash
 optimizer benchmark --suite live \
-  --profiles examples/model-profiles.example.json \
+  --profiles /path/to/real-model-profiles.json \
   --configs strongest,efficient,plain,cascade,cascade-no-context,cascade-no-cache,local \
   --repeats 3 \
   --output .cascade/benchmarks/model-pool
@@ -144,7 +144,7 @@ For a release candidate, run:
 
 ```bash
 optimizer release-benchmark \
-  --profiles examples/model-profiles.example.json \
+  --profiles /path/to/real-model-profiles.json \
   --repeats 3 \
   --output .cascade/release-benchmark
 ```
@@ -162,3 +162,8 @@ For synthetic/public fixtures where publishing full model/tool content is intent
 ## Verified Work per Expensive Token (VWET)
 
 Cascade reports the master-plan north-star metric as **verified work per 1,000 weighted model tokens**. It is derived from deterministic verified-success rate divided by mean weighted model usage; it is an internal optimization metric, not a universal scientific unit. Savings reports show the percentage change in VWET against the selected baseline alongside raw token, weighted-usage, context-transfer, wall-time, and quality changes.
+
+
+## Public-claim threshold
+
+Small experiments are useful for development, and `optimizer savings` will show their measured deltas. They are not automatically release-grade public claims. A headline token-savings claim requires at least 20 benchmark cases, at least 3 repeats, matched baseline/candidate trial counts, exact source-commit/environment/policy metadata, lower measured token use, and equal-or-better verified success. `savings.json` records both the raw measured eligibility and the stricter public-claim eligibility so a one-case demo cannot accidentally become marketing evidence.
