@@ -167,3 +167,8 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md), [`SECURITY.md`](SECURITY.md), and [`RO
 ## License
 
 MIT.
+
+
+### Runtime compatibility preflight
+
+`optimizer doctor` now feature-probes the installed Codex CLI for the exact non-interactive surfaces Cascade needs (`--json`, `--sandbox`, `--model`, and `--config`), validates both plugin manifests, checks all six project agents, reports local Ollama/vLLM availability, discovers deterministic validators, and returns an explicit release-preflight block. This keeps platform drift visible instead of silently assuming old interfaces still work.
