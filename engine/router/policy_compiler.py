@@ -119,6 +119,16 @@ def activation_ready(candidate: PolicyLock) -> tuple[bool, list[str]]:
         "bootstrap-unmeasured",
     }:
         reasons.append("benchmark suite is not a measured evaluation suite")
+    quality_delta = candidate.certificate.quality_delta
+    if quality_delta is not None and quality_delta < 0:
+        reasons.append(
+            "measured verified-success quality regressed"
+        )
+    usage_delta = candidate.certificate.weighted_usage_delta
+    if usage_delta is not None and usage_delta > 0:
+        reasons.append(
+            "measured weighted model usage regressed"
+        )
     return not reasons, reasons
 
 

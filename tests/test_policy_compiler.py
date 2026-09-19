@@ -130,3 +130,40 @@ def test_unmeasured_proposal_cannot_activate(tmp_path: Path):
     ready, reasons = activation_ready(candidate)
     assert ready is False
     assert any("quality_delta" in reason for reason in reasons)
+
+
+
+def test_policy_activation_blocks_measured_quality_regression():
+    candidate = _active().model_copy(
+        update={
+            "version": 2,
+            "base_evidence_snapshot": "sha256:" + "c" * 64,
+            "status": "proposal",
+            "certificate": PolicyCertificate(
+                benchmark_suite="live:abc:23cases:3repeats",
+                quality_delta=-0.01,
+                weighted_usage_delta=-0.40,
+            ),
+        }
+    )
+    ready, reasons = activation_ready(candidate)
+    assert ready is False
+    assert any("quality regressed" in reason for reason in reasons)
+
+
+def test_policy_activation_blocks_weighted_usage_regression():
+    candidate = _active().model_copy(
+        update={
+            "version": 2,
+            "base_evidence_snapshot": "sha256:" + "d" * 64,
+            "status": "proposal",
+            "certificate": PolicyCertificate(
+                benchmark_suite="live:abc:23cases:3repeats",
+                quality_delta=0.01,
+                weighted_usage_delta=0.02,
+            ),
+        }
+    )
+    ready, reasons = activation_ready(candidate)
+    assert ready is False
+    assert any("weighted model usage regressed" in reason for reason in reasons)
