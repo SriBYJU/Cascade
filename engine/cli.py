@@ -21,6 +21,7 @@ from .evaluation.report import (
     measured_policy_certificate,
     render_markdown_report,
 )
+from .evaluation.savings import render_savings, savings_summary
 from .observability.render import (
     render_plan,
     render_stats,
@@ -199,6 +200,15 @@ def build_parser() -> argparse.ArgumentParser:
         choices=[effort.value for effort in ReasoningEffort],
         default=ReasoningEffort.MEDIUM.value,
     )
+
+    p = sub.add_parser(
+        "savings",
+        help="show measured Cascade savings from a benchmark report",
+    )
+    p.add_argument("report", help="path to measured report.json")
+    p.add_argument("--baseline", default="plain")
+    p.add_argument("--candidate", default="cascade")
+    p.add_argument("--json", action="store_true")
 
     p = sub.add_parser(
         "benchmark-card",
@@ -564,10 +574,30 @@ def main(argv: list[str] | None = None) -> int:
                 "measured": report.get("measured"),
                 "status": report.get("status"),
                 "summary": report.get("summary"),
+                "savings": (
+                    str(live_dir / "savings.txt")
+                    if report.get("measured")
+                    and "plain" in report.get("summary", {})
+                    and "cascade" in report.get("summary", {})
+                    else None
+                ),
                 "reason": report.get("reason"),
             }
         )
         return 0 if report.get("measured") else 2
+    if args.command == "savings":
+        report_path = repo / args.report
+        savings = savings_summary(
+            load_report(report_path),
+            baseline=args.baseline,
+            candidate=args.candidate,
+        )
+        if args.json:
+            _print(savings)
+        else:
+            print(render_savings(savings))
+        return 0
+
     if args.command == "benchmark-card":
         report_path = repo / args.report
         report = load_report(report_path)

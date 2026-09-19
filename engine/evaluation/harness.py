@@ -19,6 +19,7 @@ from ..tools.runner import run_command
 from .model_pool import EvaluationModelPool
 from .models import BenchmarkCase, TrialResult, aggregate_trials
 from .report import compare_summaries, render_markdown_report
+from .savings import render_savings, savings_summary
 
 
 class EvaluationHarness:
@@ -513,4 +514,18 @@ class EvaluationHarness:
             json.dumps(report, indent=2, sort_keys=True, default=str)
         )
         (out / "report.md").write_text(render_markdown_report(report))
+        if "plain" in summary and "cascade" in summary:
+            savings = savings_summary(report)
+            (out / "savings.json").write_text(
+                json.dumps(
+                    savings,
+                    indent=2,
+                    sort_keys=True,
+                    default=str,
+                )
+                + "\n"
+            )
+            (out / "savings.txt").write_text(
+                render_savings(savings) + "\n"
+            )
         return report

@@ -107,6 +107,7 @@ Sidecars: budget manager, exact cache, single-flight, worktree manager, write-se
 | `optimizer models` | Runtime capability profile. |
 | `optimizer cache` | Inspect or clear exact cache. |
 | `optimizer benchmark` | Run reproducible local benchmark fixtures. |
+| `optimizer savings` | Show measured token/model-use/time savings from a live benchmark report. |
 | `optimizer project-install` | Safely install the Cascade skill and six custom agents into a repository. |
 | `optimizer project-status` | Detect drift in installed project integration. |
 | `optimizer project-uninstall` | Remove managed integration files while preserving user edits/backups. |
@@ -175,3 +176,14 @@ MIT.
 ### Runtime compatibility preflight
 
 `optimizer doctor` now feature-probes the installed Codex CLI for the exact non-interactive surfaces Cascade needs (`--json`, `--sandbox`, `--model`, and `--config`), validates both plugin manifests, checks all six project agents, reports local Ollama/vLLM availability, discovers deterministic validators, and returns an explicit release-preflight block. This keeps platform drift visible instead of silently assuming old interfaces still work.
+
+
+## Measured savings
+
+When a live benchmark contains both `plain` and `cascade`, Cascade automatically writes `savings.txt` and `savings.json` beside `report.json`. The terminal-friendly view can also be regenerated later:
+
+```bash
+optimizer savings .cascade/benchmarks/live/report.json
+```
+
+The summary reports token savings, weighted model-use savings, wall-time savings, verified-success change, cache delta, matched comparisons, and the exact source commit. Cascade only marks a token-savings claim as eligible when the measured candidate uses fewer tokens **and** has equal-or-better verified success than the selected baseline.
