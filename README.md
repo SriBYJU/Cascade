@@ -1,10 +1,15 @@
 # Cascade
 
+[![CI](https://github.com/SriBYJU/Cascade/actions/workflows/ci.yml/badge.svg)](https://github.com/SriBYJU/Cascade/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/SriBYJU/Cascade/actions/workflows/codeql.yml/badge.svg)](https://github.com/SriBYJU/Cascade/actions/workflows/codeql.yml)
+
 **Stop making your smartest coding model do routine work.**
 
 Cascade is a local-first adaptive orchestration layer for Codex. It routes each **trajectory step** to the least-expensive capable model—or to a deterministic tool—while minimizing context movement, isolating concurrent writes, verifying outcomes, and recording auditable evidence.
 
 > Status: **engineering release candidate**. The core engine, safety gates, plugin packaging, cross-platform CI, benchmark harness, and release gate are implemented. Public performance claims still require the final repeated real-model benchmark; Cascade does not invent savings numbers.
+
+> **New to Cascade?** Run `optimizer tutorial` after installation, or jump to the [step-by-step tutorial](#step-by-step-tutorial-use-cascade-on-any-repository).
 
 ## Why Cascade exists
 
