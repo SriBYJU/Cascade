@@ -11,7 +11,12 @@ from .context.repo_map import build_repo_map
 from .doctor import doctor
 from .evaluation.harness import EvaluationHarness
 from .evaluation.models import load_cases
-from .observability.render import render_stats, render_trace, render_why
+from .observability.render import (
+    render_plan,
+    render_stats,
+    render_trace,
+    render_why,
+)
 from .policy_lock import load_policy, policy_digest, write_proposal
 from .router.learner import AdmittedEvidenceStore
 from .router.policy_compiler import (
@@ -61,6 +66,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help="predicted/allowed write path glob; repeatable",
     )
+    p.add_argument("--json", action="store_true")
 
     p = sub.add_parser("run", help="execute the optimization workflow")
     p.add_argument("task", nargs="+", help="task text")
@@ -88,6 +94,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("task", nargs="+", help="task text")
     p.add_argument("--write", action="append", default=[])
+    p.add_argument("--json", action="store_true")
 
     p = sub.add_parser(
         "resume",
@@ -246,7 +253,10 @@ def main(argv: list[str] | None = None) -> int:
         planned = runtime.plan(task, write_paths=args.write or None)
         data = planned.to_dict()
         data["mode"] = args.command
-        _print(data)
+        if args.json:
+            _print(data)
+        else:
+            print(render_plan(data, mode=args.command))
         return 0
     if args.command == "run":
         task = " ".join(args.task)

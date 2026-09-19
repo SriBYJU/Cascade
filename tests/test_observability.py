@@ -1,4 +1,4 @@
-from engine.observability.render import render_stats, render_trace, render_why
+from engine.observability.render import render_plan, render_stats, render_trace, render_why
 
 
 def test_trace_renderer_builds_tree():
@@ -71,3 +71,31 @@ def test_stats_renderer_reports_head_and_total():
     assert "HEAD MODEL TOKENS: 10" in text
     assert "TOTAL MODEL TOKENS: 35" in text
     assert "EXACT CACHE: 2 entries / 3 hits" in text
+
+
+
+def test_plan_renderer_exposes_route_workspace_and_budget():
+    text = render_plan(
+        {
+            "route": {
+                "capability": "build",
+                "reasoning_effort": "medium",
+                "model_target": "auto",
+                "risk": "low",
+                "budget_reserved": {
+                    "tokens": 8000,
+                    "context_tokens": 1200,
+                },
+                "why": ["bounded write"],
+            },
+            "envelope": {
+                "role": "builder",
+                "allowed_paths": ["src/**"],
+                "evidence": [{}, {}],
+            },
+        }
+    )
+    assert "DAG: single bounded node" in text
+    assert "WORKSPACE: isolated writer worktree" in text
+    assert "EVIDENCE REFS: 2" in text
+    assert "8000 model tokens" in text

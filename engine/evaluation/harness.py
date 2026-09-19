@@ -20,7 +20,12 @@ from .models import BenchmarkCase, TrialResult, aggregate_trials
 class EvaluationHarness:
     """Reproducible plain-Codex vs Cascade runner with raw local trajectories."""
 
-    SUPPORTED_CONFIGS = {"plain", "cascade"}
+    SUPPORTED_CONFIGS = {
+        "plain",
+        "cascade",
+        "cascade-no-context",
+        "cascade-no-cache",
+    }
 
     def __init__(
         self,
@@ -195,6 +200,7 @@ class EvaluationHarness:
         repeat: int,
         output_dir: Path,
         model: str,
+        config: str = "cascade",
     ) -> TrialResult:
         started = time.monotonic()
         with tempfile.TemporaryDirectory(prefix="cascade-bench-cascade-") as tmp:
@@ -205,6 +211,10 @@ class EvaluationHarness:
                 runtime.codex = self.adapter
                 runtime.config.local_mode = False
                 runtime.config.cloud_fallback = True
+                if config == "cascade-no-context":
+                    runtime.config.enable_context_firewall = False
+                if config == "cascade-no-cache":
+                    runtime.config.enable_prompt_cache_affinity = False
                 if model != "auto":
                     overrides: dict[Capability, str] = {
                         capability: model
@@ -235,9 +245,9 @@ class EvaluationHarness:
                 run_id = str(result.get("run_id", "unknown"))
                 trace = self._write_trace(
                     output_dir,
-                    f"{case.case_id}-cascade-r{repeat}",
+                    f"{case.case_id}-{config}-r{repeat}",
                     {
-                        "configuration": "cascade",
+                        "configuration": config,
                         "case": case.case_id,
                         "repeat": repeat,
                         "source_commit": self._source_commit(),
@@ -250,7 +260,7 @@ class EvaluationHarness:
                 return TrialResult(
                     case_id=case.case_id,
                     category=case.category,
-                    config="cascade",
+                    config=config,
                     repeat=repeat,
                     verified_success=verified,
                     failure_kind=failure_kind,
@@ -338,6 +348,7 @@ class EvaluationHarness:
                             repeat=repeat,
                             output_dir=out,
                             model=model,
+                            config=config,
                         )
                     trials.append(trial)
 

@@ -18,7 +18,11 @@ from .cache.singleflight import SingleFlight
 from .config import CascadeConfig
 from .context.envelope import build_envelope
 from .context.repo_map import build_repo_map, repository_fingerprint
-from .context.retrieval import collect_evidence, estimate_context_tokens
+from .context.retrieval import (
+    collect_broad_evidence,
+    collect_evidence,
+    estimate_context_tokens,
+)
 from .router.capability_registry import CapabilityRegistry
 from .router.classifier import classify_step
 from .router.learner import AdmittedEvidenceStore
@@ -156,11 +160,27 @@ class CascadeRuntime:
             payload={"fingerprint": repo_map.fingerprint, "files": len(repo_map.files)},
         )
         cache_key = make_cache_key(
-            task_text, repo_map.fingerprint, [], {}, {"stage": "exploration"}
+            task_text,
+            repo_map.fingerprint,
+            [],
+            {},
+            {
+                "stage": "exploration",
+                "context_firewall": self.config.enable_context_firewall,
+            },
         )
 
         def gather() -> list[EvidenceRef]:
-            return collect_evidence(repo_map, task_text, max_files=8)
+            if self.config.enable_context_firewall:
+                return collect_evidence(
+                    repo_map,
+                    task_text,
+                    max_files=8,
+                )
+            return collect_broad_evidence(
+                repo_map,
+                task_text,
+            )
 
         cached = self.cache.get(cache_key, repo_map.fingerprint)
         if cached is not None:
@@ -209,9 +229,10 @@ class CascadeRuntime:
         )
         features.context_tokens_estimate = estimate_context_tokens(evidence)
         prefix_key = stable_prefix_key(WORKER_STABLE_PREFIX)
-        features.prompt_cache_affinity_by_model = self.prompt_affinity.scores(
-            prefix_key
-        )
+        if self.config.enable_prompt_cache_affinity:
+            features.prompt_cache_affinity_by_model = (
+                self.prompt_affinity.scores(prefix_key)
+            )
         route = self.router.route(features, task_id=task_id)
         role = self._role_for(route.capability, features.write_intent)
         envelope = build_envelope(
@@ -475,14 +496,15 @@ BOUNDED EVIDENCE
             effort=planned.route.reasoning_effort,
         )
         elapsed = int((time.monotonic() - start) * 1000)
-        self.prompt_affinity.observe(
-            model_id=model,
-            prefix_key=stable_prefix_key(WORKER_STABLE_PREFIX),
-            input_tokens=int(result.usage.get("input_tokens", 0)),
-            cached_input_tokens=int(
-                result.usage.get("cached_input_tokens", 0)
-            ),
-        )
+        if self.config.enable_prompt_cache_affinity:
+            self.prompt_affinity.observe(
+                model_id=model,
+                prefix_key=stable_prefix_key(WORKER_STABLE_PREFIX),
+                input_tokens=int(result.usage.get("input_tokens", 0)),
+                cached_input_tokens=int(
+                    result.usage.get("cached_input_tokens", 0)
+                ),
+            )
         if result.ok:
             self.circuits.success(circuit_key)
         else:

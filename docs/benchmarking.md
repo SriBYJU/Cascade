@@ -55,3 +55,19 @@ optimizer benchmark --suite live \
 Each trial starts from the same generated git fixture, runs deterministic acceptance commands, records failed runs, and writes a raw JSON trajectory under `raw/`. If Codex is unavailable, the report says `environment-unavailable`; Cascade does not fabricate benchmark numbers.
 
 The first live manifest covers trivial edit, single-file bug, security/authorization, and multi-file dependency work. It is an initial A/B suite, not yet the full Phase 8 scientific benchmark.
+
+
+## Implemented ablations
+
+The live runner now supports two real single-task ablations in addition to plain and normal Cascade:
+
+- `cascade-no-context`: disables the evidence-first Context Firewall and deliberately feeds a much broader mapped repository context.
+- `cascade-no-cache`: disables measured prompt-cache-affinity scoring and observation.
+
+```bash
+optimizer benchmark --suite live \
+  --configs plain,cascade,cascade-no-context,cascade-no-cache \
+  --repeats 3
+```
+
+The parallel-DAG ablation remains a separate roadmap item because single-task live fixtures do not exercise DAG concurrency; Cascade does not label a no-op switch as a measured ablation.

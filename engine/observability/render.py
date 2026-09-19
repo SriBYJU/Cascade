@@ -123,3 +123,54 @@ def render_stats(stats: dict[str, Any]) -> str:
             f"{int(affinity.get('input_tokens', 0))} input tokens"
         )
     return "\n".join(lines)
+
+
+
+def render_plan(planned: dict[str, Any], *, mode: str = "plan") -> str:
+    route = planned.get("route", {})
+    envelope = planned.get("envelope", {})
+    if not isinstance(route, dict):
+        route = {}
+    if not isinstance(envelope, dict):
+        envelope = {}
+    write_paths = envelope.get("allowed_paths", [])
+    evidence = envelope.get("evidence", [])
+    risk = route.get("risk", "unknown")
+    capability = route.get("capability", "unknown")
+    effort = route.get("reasoning_effort", "unknown")
+    model = route.get("model_target", "unknown")
+    role = envelope.get("role", "unknown")
+    worktree = (
+        "isolated writer worktree"
+        if role in {"builder", "debugger", "integrator"}
+        else "shared read-only checkout"
+    )
+    budget = route.get("budget_reserved", {})
+    if not isinstance(budget, dict):
+        budget = {}
+    why = route.get("why", [])
+    lines = [
+        f"MODE: {mode}",
+        "DAG: single bounded node",
+        f"ROUTE: {capability} / {effort}",
+        f"MODEL TARGET: {model}",
+        f"WORKER: {role}",
+        f"RISK: {risk}",
+        f"WORKSPACE: {worktree}",
+        f"EVIDENCE REFS: {len(evidence) if isinstance(evidence, list) else 0}",
+        (
+            "WRITE SCOPE: "
+            + ", ".join(str(item) for item in write_paths)
+            if isinstance(write_paths, list) and write_paths
+            else "WRITE SCOPE: read-only / unspecified"
+        ),
+        (
+            "BUDGET: "
+            f"{budget.get('tokens', 0)} model tokens / "
+            f"{budget.get('context_tokens', 0)} context tokens"
+        ),
+    ]
+    if isinstance(why, list) and why:
+        lines.append("WHY:")
+        lines.extend(f"  - {item}" for item in why)
+    return "\n".join(lines)
