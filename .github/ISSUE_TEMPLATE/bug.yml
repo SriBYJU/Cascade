@@ -1,0 +1,23 @@
+name: Bug report
+description: Report a reproducible Cascade defect.
+title: "[bug] "
+labels: [bug]
+body:
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: Include the command, repository state, and minimal reproduction.
+    validations:
+      required: true
+  - type: textarea
+    id: trace
+    attributes:
+      label: Cascade trace
+      description: Paste redacted `optimizer trace` output.
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true

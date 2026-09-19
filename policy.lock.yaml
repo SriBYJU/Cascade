@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "base_evidence_snapshot": "bootstrap",
+  "routes": {
+    "quick": {"target": "quick", "effort": "low"},
+    "explore": {"target": "explore", "effort": "low"},
+    "build": {"target": "build", "effort": "medium"},
+    "debug": {"target": "debug", "effort": "high"},
+    "deep": {"target": "deep", "effort": "high"},
+    "critical": {"target": "critical", "effort": "xhigh"}
+  },
+  "guards": {
+    "auth_or_security": "deep",
+    "destructive_or_secret": "critical",
+    "no_tests_and_multifile": "deep"
+  },
+  "certificate": {
+    "benchmark_suite": "bootstrap-unmeasured",
+    "quality_delta": null,
+    "weighted_usage_delta": null
+  },
+  "status": "bootstrap",
+  "note": "Rule baseline only. JSON syntax is valid YAML; no YAML dependency is required."
+}

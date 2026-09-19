@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+title: Cascade
+type: software
+version: 0.1.0-dev
+message: "If you use Cascade in research, please cite this repository and the exact release commit used."
+authors:
+  - family-names: SriBYJU
+repository-code: "https://github.com/SriBYJU/Cascade"
+license: MIT
+date-released: 2026-09-19

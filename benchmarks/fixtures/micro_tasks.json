@@ -1,0 +1,22 @@
+[
+  {"id":"m01","category":"trivial-edit","task":"Rename local variable count to item_count in one function","step_type":"build","write":["src/example.py"],"has_tests":true,"expected_min":"build"},
+  {"id":"m02","category":"search","task":"Locate where session cookies are configured","step_type":"explore","write":[],"has_tests":true,"expected_min":"explore"},
+  {"id":"m03","category":"verify","task":"Run tests and report failures","step_type":"verify","write":[],"has_tests":true,"expected_min":"no-model"},
+  {"id":"m04","category":"single-file-bug","task":"Fix off-by-one pagination bug","step_type":"build","write":["api/pagination.py"],"has_tests":true,"expected_min":"build"},
+  {"id":"m05","category":"multi-file-bug","task":"Fix dependency wiring across handler service and tests","step_type":"build","write":["api/handler.py","svc/core.py","tests/test_core.py"],"has_tests":true,"expected_min":"build"},
+  {"id":"m06","category":"feature","task":"Add bounded CSV export feature with tests","step_type":"build","write":["export/csv.py","tests/test_csv.py"],"has_tests":true,"expected_min":"build"},
+  {"id":"m07","category":"debug","task":"Debug failing integration test and traceback","step_type":"debug","write":["service.py"],"has_tests":true,"expected_min":"debug"},
+  {"id":"m08","category":"migration","task":"Change database schema migration for user sessions","step_type":"build","write":["migrations/2026.sql","models/session.py"],"has_tests":true,"expected_min":"deep"},
+  {"id":"m09","category":"frontend","task":"Fix settings modal save flow","step_type":"build","write":["ui/modal.tsx","api/settings.ts"],"has_tests":true,"expected_min":"build"},
+  {"id":"m10","category":"docs","task":"Find version-specific API usage in code","step_type":"explore","write":[],"has_tests":false,"expected_min":"explore"},
+  {"id":"m11","category":"architecture","task":"Choose architecture for cross-package event bus tradeoff","step_type":"critical","write":[],"has_tests":false,"expected_min":"critical"},
+  {"id":"m12","category":"security","task":"Fix OAuth permission validation bug","step_type":"build","write":["auth/oauth.py"],"has_tests":true,"expected_min":"deep"},
+  {"id":"m13","category":"repo-explore","task":"Map all implementations of PaymentProvider","step_type":"explore","write":[],"has_tests":false,"expected_min":"explore"},
+  {"id":"m14","category":"refactor","task":"Refactor six files without tests","step_type":"build","write":["a.py","b.py","c.py","d.py","e.py","f.py"],"has_tests":false,"expected_min":"deep"},
+  {"id":"m15","category":"ambiguity","task":"Design maybe either queue or event stream for retries","step_type":"build","write":["queue.py"],"has_tests":false,"expected_min":"deep"},
+  {"id":"m16","category":"integrate","task":"Integrate verified auth branch","step_type":"integrate","write":["auth/**"],"has_tests":true,"strong_validation":true,"expected_min":"build"},
+  {"id":"m17","category":"security-critical","task":"Rotate production secret and deploy auth change","step_type":"critical","write":["deploy/**"],"has_tests":true,"expected_min":"critical"},
+  {"id":"m18","category":"verify","task":"Typecheck the project","step_type":"verify","write":[],"has_tests":true,"expected_min":"no-model"},
+  {"id":"m19","category":"quick","task":"Summarize these three function signatures","step_type":"explore","write":[],"has_tests":false,"expected_min":"explore"},
+  {"id":"m20","category":"debug-security","task":"Debug auth race condition in session refresh","step_type":"debug","write":["auth/session.py"],"has_tests":true,"expected_min":"deep"}
+]

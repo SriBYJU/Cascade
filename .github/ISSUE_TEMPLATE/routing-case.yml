@@ -1,0 +1,22 @@
+name: Routing case
+description: Show a case where Cascade chose the wrong capability or effort.
+title: "[routing] "
+labels: [routing]
+body:
+  - type: textarea
+    id: task
+    attributes:
+      label: Task
+    validations:
+      required: true
+  - type: textarea
+    id: route
+    attributes:
+      label: Observed route and `optimizer why`
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Objective evidence
+      description: Tests, benchmark ground truth, or another deterministic signal.

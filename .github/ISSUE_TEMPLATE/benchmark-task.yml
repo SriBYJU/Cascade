@@ -1,0 +1,17 @@
+name: Benchmark task
+description: Propose a reproducible benchmark case.
+title: "[benchmark] "
+labels: [benchmark]
+body:
+  - type: textarea
+    id: fixture
+    attributes:
+      label: Task and fixture
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Deterministic acceptance criteria
+    validations:
+      required: true

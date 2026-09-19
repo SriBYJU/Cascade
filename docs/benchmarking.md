@@ -1,0 +1,40 @@
+# Benchmarking
+
+## Principle
+
+Benchmark the **harness**, not just the model. Hold task, repository commit, environment, toolchain, and model pool constant when comparing plain Codex with Cascade.
+
+## Configurations
+
+The evaluation framework is designed for:
+
+1. strongest available model for all steps;
+2. efficient model for all steps;
+3. plain Codex/default delegation;
+4. Cascade rule-based routing;
+5. Cascade without Context Firewall;
+6. Cascade without prompt-cache affinity;
+7. Cascade without parallel DAG;
+8. Cascade with a configured local tier.
+
+## Outcomes
+
+Quality: task success, deterministic acceptance, regressions, pass@1/pass@3.
+
+Model use: head/worker input-output tokens, cached tokens, reasoning level.
+
+System: wall time, context bytes, tool calls, agent calls, retries.
+
+Routing: route decisions, escalations, unnecessary strong-tier calls, route regret in replay.
+
+Safety: scope violations, unexpected writes, denied side effects, injection fixtures.
+
+Reliability: resume success, idempotent replay, merge conflicts, circuit trips.
+
+## Current included suite
+
+`optimizer benchmark` runs a 20-case deterministic routing-policy suite. It is a code/acceptance benchmark only. It intentionally does not fabricate model usage, latency savings, or quality numbers.
+
+## Scientific-report rule
+
+For non-deterministic agent tasks, run repeated trials and report variance. Publish raw traces, exact commits, policy lock, environment metadata, and failed runs. Label every number as measured, estimated, or target.
