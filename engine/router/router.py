@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from ..schemas import BudgetReservation, Capability, RouteDecision, RouteFeatures
+from ..schemas import BudgetReservation, Capability, ModelProfile, RouteDecision, RouteFeatures
 from ..scheduler.budgets import BudgetManager
 from .capability_registry import CapabilityRegistry
 from .policy import choose_effort, minimum_capability
@@ -44,7 +44,7 @@ class Router:
                 ],
             )
 
-        def adjusted_score(candidate):
+        def adjusted_score(candidate: ModelProfile) -> float:
             raw = route_score(candidate, features)
             tier_distance = (
                 CapabilityRegistry.order(candidate.capability)
