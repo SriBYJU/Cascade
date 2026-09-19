@@ -56,6 +56,18 @@ Each trial starts from the same generated git fixture, runs deterministic accept
 
 The live manifest now contains 23 deterministic cases across trivial edits, search, single- and multi-file bugs, features, test repair, migration, frontend behavior, documentation lookup, architecture exploration, security, repository exploration, refactoring, ambiguity, configuration, concurrency, serialization, cache behavior, integration, error handling, API validation, CLI behavior, and data structures. Read-only cases use explicit answer-substring acceptance while write cases use deterministic commands.
 
+An additional package-boundary fixture lives at `benchmarks/fixtures/monorepo_live.json`. It keeps the 23-case release suite stable while adding one read-only workspace-boundary task and one bounded-write task across sibling packages. Run it through the same live harness:
+
+```bash
+optimizer benchmark --suite live \
+  --manifest benchmarks/fixtures/monorepo_live.json \
+  --configs plain,cascade \
+  --repeats 3 \
+  --output .cascade/benchmarks/monorepo-live
+```
+
+Validator discovery for that fixture is package-local: workspace scripts retain their package cwd instead of being promoted to the repository root.
+
 
 ## Implemented ablations
 

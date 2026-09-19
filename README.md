@@ -45,7 +45,7 @@ Cascade treats models as heterogeneous compute, context as scarce bandwidth, det
 - Exact cache, prompt-affinity utilities, in-process single-flight deduplication.
 - SQLite event log, checkpoints, exact-cache state, admitted-evidence store, idempotency ledger, and circuit breakers.
 - Worktree-per-writer manager, write-set conflict detection, scope gate, rollback, and merge-gate primitives.
-- Validator discovery for Python, JavaScript/TypeScript, Rust, and Go; progressive deterministic validation and secret-pattern checks.
+- Validator discovery for Python, JavaScript/TypeScript, Java/Kotlin (Gradle/Maven), Ruby/Rails, Rust, and Go; progressive deterministic validation and secret-pattern checks.
 - Bounded DAG/concurrency and token/context budget reservation.
 - Codex `exec --json` adapter plus optional Ollama/vLLM adapter boundaries.
 - Local `doctor`, `plan`, `run`, `resume`, `shadow`, `status`, `trace`, `why`, `stats`, `models`, `cache`, `benchmark`, and `cleanup` commands.

@@ -118,6 +118,103 @@ def _python_roots(root: Path) -> list[Path]:
     return [unique[key] for key in sorted(unique)]
 
 
+def _jvm_roots(root: Path) -> list[Path]:
+    markers = (
+        "pom.xml",
+        "build.gradle",
+        "build.gradle.kts",
+        "settings.gradle",
+        "settings.gradle.kts",
+        "gradlew",
+        "gradlew.bat",
+        "mvnw",
+        "mvnw.cmd",
+    )
+    roots: list[Path] = []
+    for candidate in (
+        root,
+        *(root / name for name in ("backend", "server", "android", "app")),
+    ):
+        if any((candidate / marker).exists() for marker in markers):
+            roots.append(candidate.resolve())
+
+    unique: dict[str, Path] = {}
+    for candidate in roots:
+        rel = (
+            "."
+            if candidate.resolve() == root.resolve()
+            else candidate.resolve().relative_to(root.resolve()).as_posix()
+        )
+        unique[rel] = candidate
+    return [unique[key] for key in sorted(unique)]
+
+
+def _ruby_roots(root: Path) -> list[Path]:
+    markers = ("Gemfile", "Rakefile", ".rspec", ".rubocop.yml")
+    roots: list[Path] = []
+    for candidate in (
+        root,
+        *(root / name for name in ("backend", "server", "web")),
+    ):
+        if any((candidate / marker).exists() for marker in markers) or (
+            candidate / "bin" / "rails"
+        ).exists():
+            roots.append(candidate.resolve())
+
+    unique: dict[str, Path] = {}
+    for candidate in roots:
+        rel = (
+            "."
+            if candidate.resolve() == root.resolve()
+            else candidate.resolve().relative_to(root.resolve()).as_posix()
+        )
+        unique[rel] = candidate
+    return [unique[key] for key in sorted(unique)]
+
+
+def _local_or_system_command(
+    root: Path,
+    *,
+    unix_wrapper: str,
+    windows_wrapper: str,
+    system_command: str,
+) -> tuple[str, ...] | None:
+    if sys.platform.startswith("win"):
+        if (root / windows_wrapper).is_file():
+            return (windows_wrapper,)
+    elif (root / unix_wrapper).is_file():
+        return (f"./{unix_wrapper}",)
+    if shutil.which(system_command):
+        return (system_command,)
+    return None
+
+
+def _read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+
+
+def _rakefile_declares_test(root: Path) -> bool:
+    text = _read_text(root / "Rakefile")
+    return any(
+        token in text
+        for token in (
+            "Rake::TestTask",
+            "task :test",
+            "task(:test",
+            'task "test"',
+            "task('test'",
+        )
+    )
+
+
+def _gemfile_mentions(root: Path, gem: str) -> bool:
+    text = _read_text(root / "Gemfile")
+    return gem.lower() in text.lower()
+
+
 def _scope_name(root: Path, project_root: Path, name: str) -> str:
     if project_root.resolve() == root.resolve():
         return name
@@ -269,6 +366,121 @@ def discover_validators(root: str | Path) -> list[ValidatorSpec]:
                     _scope_name(root, package_root, f"js-{script}"),
                     command,
                     category,
+                    cwd,
+                )
+            )
+
+    for project_root in _jvm_roots(root):
+        cwd = _scope_cwd(root, project_root)
+        has_gradle = any(
+            (project_root / name).exists()
+            for name in (
+                "build.gradle",
+                "build.gradle.kts",
+                "settings.gradle",
+                "settings.gradle.kts",
+            )
+        )
+        if has_gradle:
+            gradle = _local_or_system_command(
+                project_root,
+                unix_wrapper="gradlew",
+                windows_wrapper="gradlew.bat",
+                system_command="gradle",
+            )
+            if gradle is not None:
+                specs.append(
+                    ValidatorSpec(
+                        _scope_name(root, project_root, "jvm-gradle-test"),
+                        (*gradle, "test"),
+                        "tests",
+                        cwd,
+                    )
+                )
+
+        if (project_root / "pom.xml").exists():
+            maven = _local_or_system_command(
+                project_root,
+                unix_wrapper="mvnw",
+                windows_wrapper="mvnw.cmd",
+                system_command="mvn",
+            )
+            if maven is not None:
+                specs.append(
+                    ValidatorSpec(
+                        _scope_name(root, project_root, "jvm-maven-test"),
+                        (*maven, "test"),
+                        "tests",
+                        cwd,
+                    )
+                )
+
+    for project_root in _ruby_roots(root):
+        cwd = _scope_cwd(root, project_root)
+        ruby = shutil.which("ruby")
+        bundle = shutil.which("bundle")
+        if ruby and (project_root / "bin" / "rails").is_file():
+            specs.append(
+                ValidatorSpec(
+                    _scope_name(root, project_root, "rails-test"),
+                    ("ruby", "bin/rails", "test"),
+                    "tests",
+                    cwd,
+                )
+            )
+        elif ruby and (project_root / "bin" / "rspec").is_file():
+            specs.append(
+                ValidatorSpec(
+                    _scope_name(root, project_root, "rspec"),
+                    ("ruby", "bin/rspec"),
+                    "tests",
+                    cwd,
+                )
+            )
+        elif (
+            bundle
+            and (project_root / "Gemfile").is_file()
+            and (
+                (project_root / ".rspec").exists()
+                or (project_root / "spec").is_dir()
+                or _gemfile_mentions(project_root, "rspec")
+            )
+        ):
+            specs.append(
+                ValidatorSpec(
+                    _scope_name(root, project_root, "rspec"),
+                    ("bundle", "exec", "rspec"),
+                    "tests",
+                    cwd,
+                )
+            )
+        elif (
+            bundle
+            and (project_root / "Gemfile").is_file()
+            and _rakefile_declares_test(project_root)
+        ):
+            specs.append(
+                ValidatorSpec(
+                    _scope_name(root, project_root, "rake-test"),
+                    ("bundle", "exec", "rake", "test"),
+                    "tests",
+                    cwd,
+                )
+            )
+
+        if (
+            bundle
+            and (project_root / "Gemfile").is_file()
+            and (
+                (project_root / ".rubocop.yml").exists()
+                or _gemfile_mentions(project_root, "rubocop")
+            )
+        ):
+            specs.append(
+                ValidatorSpec(
+                    _scope_name(root, project_root, "rubocop"),
+                    ("bundle", "exec", "rubocop"),
+                    "lint",
                     cwd,
                 )
             )
