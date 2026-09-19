@@ -13,3 +13,8 @@ python -m engine.cli benchmark
 ```
 
 Do not add performance marketing numbers without reproducible raw traces and a committed benchmark definition. Do not add hosted telemetry, mandatory accounts, unsupported credential interception, or autonomous write paths that bypass permission/merge gates.
+
+
+## New contributors
+
+Start with the repository's **good first issue** label. Those issues are intentionally scoped so a contributor can improve validator discovery, benchmark coverage, observability, or security fixtures without having to redesign the routing architecture. Keep additions deterministic, local-first, and covered by tests.
