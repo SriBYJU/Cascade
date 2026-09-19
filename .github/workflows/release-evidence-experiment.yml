@@ -204,10 +204,13 @@ jobs:
 
       - name: Probe every benchmark model before the full run
         run: |
-          set -euo pipefail
+          set -uo pipefail
           mkdir -p .cascade/release-benchmark/probes
+          failed=0
           for model in gpt-5.6-luna gpt-5.6-terra gpt-5.6-sol; do
             echo "Probing $model"
+            stdout=".cascade/release-benchmark/probes/$model.jsonl"
+            stderr=".cascade/release-benchmark/probes/$model.stderr.txt"
             codex exec \
               --ephemeral \
               --ignore-user-config \
@@ -216,8 +219,19 @@ jobs:
               --model "$model" \
               --config 'model_reasoning_effort="medium"' \
               "Reply with exactly OK and do not use tools." \
-              > ".cascade/release-benchmark/probes/$model.jsonl"
+              </dev/null >"$stdout" 2>"$stderr"
+            status=$?
+            echo "$status" > ".cascade/release-benchmark/probes/$model.exit-code.txt"
+            if [ "$status" -ne 0 ]; then
+              failed=1
+              echo "::error::Probe failed for $model (exit $status)"
+              cat "$stderr" || true
+              cat "$stdout" || true
+            else
+              echo "Probe passed for $model"
+            fi
           done
+          exit "$failed"
 
       - name: Capture preflight environment
         run: |
