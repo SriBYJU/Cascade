@@ -84,6 +84,20 @@ class PlannedTask:
 
 
 class CascadeRuntime:
+    PROTECTED_PATHS = [
+        ".git/**",
+        ".cascade/**",
+        "policy.lock.yaml",
+        "plugin.json",
+        ".codex-plugin/plugin.json",
+        ".codex/config.toml",
+        ".codex/agents/**",
+        "AGENTS.md",
+        "**/AGENTS.md",
+        "AGENTS.override.md",
+        "**/AGENTS.override.md",
+    ]
+
     def __init__(self, repo_root: str | Path = "."):
         self.config = CascadeConfig.load(repo_root)
         self.db = StateDB(self.config.db_path)
@@ -235,6 +249,9 @@ class CascadeRuntime:
             )
         route = self.router.route(features, task_id=task_id)
         role = self._role_for(route.capability, features.write_intent)
+        merged_forbidden = list(dict.fromkeys(
+            [*self.PROTECTED_PATHS, *(forbidden_paths or [])]
+        ))
         envelope = build_envelope(
             task_id=task_id,
             role=role,
@@ -242,7 +259,7 @@ class CascadeRuntime:
             evidence=evidence,
             capability=route.capability,
             allowed_paths=allowed_paths or (write_paths if write_paths else ["**"]),
-            forbidden_paths=forbidden_paths or [".git/**", ".cascade/**"],
+            forbidden_paths=merged_forbidden,
             constraints=[
                 "preserve unrelated behavior",
                 "prefer the smallest defensible diff",

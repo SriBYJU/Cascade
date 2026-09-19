@@ -27,3 +27,10 @@ Only outcomes evaluated by tests, benchmark ground truth, explicit human accept/
 ## Secrets and traces
 
 Trace content defaults to metadata-oriented records. The core avoids storing API keys, credentials, or arbitrary full prompts. Secret-pattern scanning is a last merge-gate check, not a substitute for provider/GitHub secret scanning.
+
+
+## Protected control-plane files
+
+Normal worker envelopes now always forbid writes to Cascade's trust/control-plane files, including `policy.lock.yaml`, root/compatibility plugin manifests, `.codex/config.toml`, `.codex/agents/**`, and scoped `AGENTS.md` instruction files. Caller-supplied forbidden paths are merged with these mandatory protections rather than replacing them.
+
+Unknown executable commands also fail closed into an approval-required risk class. Network tools are classified as writes when mutation flags/methods are present, and environment-dumping commands are treated as secret access.
