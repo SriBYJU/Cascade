@@ -53,6 +53,7 @@ jobs:
         env:
           CODEX_API_KEY_SECRET: ${{ secrets.CODEX_API_KEY }}
           OPENAI_API_KEY_SECRET: ${{ secrets.OPENAI_API_KEY }}
+          CODEX_ACCESS_TOKEN_SECRET: ${{ secrets.CODEX_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
           if [ -n "${CODEX_API_KEY_SECRET:-}" ]; then
@@ -61,8 +62,11 @@ jobs:
           elif [ -n "${OPENAI_API_KEY_SECRET:-}" ]; then
             printf 'CODEX_API_KEY=%s\n' "$OPENAI_API_KEY_SECRET" >> "$GITHUB_ENV"
             echo "Using configured OPENAI_API_KEY secret through CODEX_API_KEY."
+          elif [ -n "${CODEX_ACCESS_TOKEN_SECRET:-}" ]; then
+            printf 'CODEX_ACCESS_TOKEN=%s\n' "$CODEX_ACCESS_TOKEN_SECRET" >> "$GITHUB_ENV"
+            echo "Using configured CODEX_ACCESS_TOKEN secret."
           else
-            echo "::error::No CODEX_API_KEY or OPENAI_API_KEY repository secret is configured."
+            echo "::error::No CODEX_API_KEY, OPENAI_API_KEY, or CODEX_ACCESS_TOKEN repository secret is configured."
             exit 78
           fi
 
