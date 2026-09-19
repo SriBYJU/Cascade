@@ -19,6 +19,7 @@ class ParallelFakeAdapter:
         self.lock = threading.Lock()
         self.active = 0
         self.max_active = 0
+        self.barrier = threading.Barrier(2)
 
     def available(self) -> bool:
         return True
@@ -38,7 +39,8 @@ class ParallelFakeAdapter:
             self.active += 1
             self.max_active = max(self.max_active, self.active)
         try:
-            time.sleep(0.03)
+            self.barrier.wait(timeout=2)
+            time.sleep(0.05)
             if sandbox_mode == "workspace-write":
                 if '"goal": "Fix alpha.py' in prompt:
                     Path(cwd, "alpha.py").write_text(
