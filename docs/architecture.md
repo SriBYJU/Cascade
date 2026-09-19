@@ -50,3 +50,10 @@ Ambiguous write tasks and CRITICAL writes now invoke a separate read-only archit
 ## Project-aware validator discovery
 
 Validator discovery no longer treats whatever tools happen to be installed in the caller's environment as project policy. Ruff and mypy run only when the repository declares their configuration; pytest runs when tests/configuration are present; compiler/parser checks remain deterministic defaults. Validation cache artifacts such as `.pytest_cache`, `__pycache__`, mypy/ruff caches, and coverage output are excluded from write-scope accounting so a failed first validation attempt cannot poison the next merge gate.
+
+
+## Capability profile files
+
+Concrete model names remain runtime configuration rather than routing policy. Repositories can now supply validated capability profiles either inline as `model_profiles` in `.cascade.json` or through a repository-contained `model_profiles_file`. Each entry declares a capability class, supported reasoning efforts, local/cloud placement, availability, and relative cost/latency weights. Invalid JSON, duplicate capability entries, attempts to redefine the deterministic `no-model` tier, empty/invalid reasoning declarations, or profile paths escaping the repository fail closed. Environment/`capability_map` overrides may replace only the model identifier; they do not lower the capability class or bypass security/risk floors.
+
+See `examples/model-profiles.example.json` for a provider-neutral fixture.

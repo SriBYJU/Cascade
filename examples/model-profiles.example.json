@@ -1,0 +1,76 @@
+[
+  {
+    "model_id": "local-fast",
+    "capability": "quick",
+    "reasoning_efforts": [
+      "low"
+    ],
+    "local": true,
+    "available": true,
+    "cost_weight": 0.05,
+    "latency_weight": 0.2
+  },
+  {
+    "model_id": "local-explorer",
+    "capability": "explore",
+    "reasoning_efforts": [
+      "low",
+      "medium"
+    ],
+    "local": true,
+    "available": true,
+    "cost_weight": 0.08,
+    "latency_weight": 0.3
+  },
+  {
+    "model_id": "balanced-build",
+    "capability": "build",
+    "reasoning_efforts": [
+      "low",
+      "medium",
+      "high"
+    ],
+    "local": false,
+    "available": true,
+    "cost_weight": 0.45,
+    "latency_weight": 0.75
+  },
+  {
+    "model_id": "debug-specialist",
+    "capability": "debug",
+    "reasoning_efforts": [
+      "medium",
+      "high"
+    ],
+    "local": false,
+    "available": true,
+    "cost_weight": 0.65,
+    "latency_weight": 0.9
+  },
+  {
+    "model_id": "deep-reasoner",
+    "capability": "deep",
+    "reasoning_efforts": [
+      "medium",
+      "high",
+      "xhigh"
+    ],
+    "local": false,
+    "available": true,
+    "cost_weight": 0.85,
+    "latency_weight": 1.1
+  },
+  {
+    "model_id": "frontier-head",
+    "capability": "critical",
+    "reasoning_efforts": [
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "local": false,
+    "available": true,
+    "cost_weight": 1,
+    "latency_weight": 1.4
+  }
+]

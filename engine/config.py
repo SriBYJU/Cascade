@@ -6,7 +6,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from .schemas import Capability
+from .router.profile_loader import parse_profiles
+from .schemas import Capability, ModelProfile
 
 
 def _env_flag(name: str, default: bool) -> bool:
@@ -30,6 +31,9 @@ class CascadeConfig:
     total_token_budget: int = 150000
     context_token_budget: int = 30000
     capability_map: dict[Capability, str] = field(default_factory=dict)
+    model_profiles: dict[Capability, ModelProfile] = field(
+        default_factory=dict
+    )
     local_mode: bool = False
     cloud_fallback: bool = True
     trace_content: str = "metadata_only"
@@ -99,4 +103,26 @@ class CascadeConfig:
             raise ValueError("capability_map must be an object")
         for key, value in capability_map.items():
             config.capability_map[Capability(str(key))] = str(value)
+
+        model_profiles = data.get("model_profiles")
+        profiles_file = data.get("model_profiles_file")
+        if model_profiles is not None and profiles_file is not None:
+            raise ValueError(
+                "use model_profiles or model_profiles_file, not both"
+            )
+        if model_profiles is not None:
+            config.model_profiles = parse_profiles(model_profiles)
+        if profiles_file is not None:
+            rel = Path(str(profiles_file))
+            if rel.is_absolute() or ".." in rel.parts:
+                raise ValueError(
+                    "model_profiles_file must remain inside the repository"
+                )
+            profile_path = (root / rel).resolve()
+            if not profile_path.is_relative_to(root):
+                raise ValueError(
+                    "model_profiles_file escaped repository root"
+                )
+            raw_profiles: object = json.loads(profile_path.read_text())
+            config.model_profiles = parse_profiles(raw_profiles)
         return config

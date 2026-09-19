@@ -116,7 +116,10 @@ class CascadeRuntime:
             head_tokens=self.config.head_token_budget,
             context_tokens=self.config.context_token_budget,
         )
-        self.registry = CapabilityRegistry(self.config.capability_map)
+        self.registry = CapabilityRegistry(
+            self.config.capability_map,
+            self.config.model_profiles,
+        )
         self.router = Router(self.registry, self.budgets)
         self.admitted_evidence = AdmittedEvidenceStore(self.db)
         self.codex: ModelAdapter = CodexAdapter()
