@@ -41,7 +41,8 @@ line-length = 100
 exclude = [".cascade"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM"]
+select = ["E9", "F", "B"]
+# Keep CI focused on correctness; formatting/style is handled separately.
 
 [tool.mypy]
 python_version = "3.11"
