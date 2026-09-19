@@ -318,6 +318,10 @@ trace + why + stats
 run --apply  (only when you want integration)
 ```
 
+### Security note for untrusted repositories
+
+Cascade treats repository prose as untrusted data and constrains agent writes, but deterministic validators such as tests, package scripts, compilers, and linters may execute repository-owned code. Cascade strips common credential environment variables and gives validators a temporary home, but that is **not an operating-system sandbox**. For an unknown or hostile repository, run Cascade inside an appropriate container/VM or another OS-level sandbox before executing its validators.
+
 ### Common first-run problems
 
 | What you see | What to do |
