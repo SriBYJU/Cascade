@@ -2,6 +2,19 @@
 
 Cascade's engineering gate is automated. The final release evidence requires two real-environment checks that CI cannot truthfully synthesize.
 
+## Remaining before the final measured release
+
+These are the release blockers that still need real evidence, not more architecture work:
+
+- [ ] **Real 23-task × 3-repeat authenticated run:** not preserved yet. Run the full live suite against model IDs that the authenticated Codex environment actually accepts and retain every matched trial, failed run, raw trajectory reference, exact source commit, toolchain/environment metadata, model profile, and policy-lock metadata.
+- [ ] **Real defensible “Cascade saves X%” number:** not yet. Generate this only from the preserved release-grade report. The public-claim guard must have at least 20 cases × 3 repeats, matched plain-vs-Cascade evidence, fewer measured tokens, and equal-or-better verified success before the README can state a headline percentage.
+- [ ] **Real sequential-vs-parallel evidence:** preserve the generated `parallel-live.json` and report the measured wall-time result without converting a target or deterministic harness result into a speedup claim.
+- [ ] **Evidence-backed release gate:** run `optimizer release-gate` against the preserved live and parallel reports and fix/rerun only if a hard gate fails.
+- [ ] **Fresh ChatGPT desktop Codex check:** install Cascade from **Cascade Local** in a fresh desktop session, confirm the Cascade skill and all six agents are discoverable, run a read-only plan and a bounded write plan, then uninstall and confirm cleanup is safe.
+- [ ] **Release closeout:** close/update #7, #8, and #9 with the preserved evidence, update the README with only measured claims, then create the stable tag/release and let the trusted-publishing/attestation workflow run.
+
+Do not substitute the earlier 63% example calculation, a synthetic benchmark, a deterministic micro-benchmark, or a target for the measured release result.
+
 ## 1. Fresh ChatGPT desktop Codex plugin check
 
 1. Open the ChatGPT desktop app.
