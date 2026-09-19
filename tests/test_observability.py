@@ -66,6 +66,10 @@ def test_stats_renderer_reports_head_and_total():
             "retries": 0,
             "escalations": 0,
             "latency_ms": 100,
+            "context_bytes": 2048,
+            "tool_calls": 3,
+            "agent_calls": 1,
+            "trajectory_steps": 9,
             "cache": {"entries": 2, "hits": 3},
         }
     )
@@ -73,6 +77,9 @@ def test_stats_renderer_reports_head_and_total():
     assert "TOTAL MODEL TOKENS: 35" in text
     assert "WEIGHTED USAGE: 17.50" in text
     assert "EXACT CACHE: 2 entries / 3 hits" in text
+    assert "CONTEXT TRANSFER: 2048 bytes" in text
+    assert "TOOL CALLS: 3" in text
+    assert "TRAJECTORY STEPS: 9" in text
 
 
 

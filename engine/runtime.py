@@ -496,6 +496,22 @@ BOUNDED EVIDENCE
             effort=planned.route.reasoning_effort,
         )
         elapsed = int((time.monotonic() - start) * 1000)
+        tool_item_types = {
+            "command_execution",
+            "mcp_tool_call",
+            "web_search",
+        }
+        tool_calls = 0
+        for raw_event in result.events:
+            if raw_event.get("type") != "item.completed":
+                continue
+            item = raw_event.get("item")
+            if (
+                isinstance(item, dict)
+                and item.get("type") in tool_item_types
+            ):
+                tool_calls += 1
+        context_bytes = len(prompt.encode("utf-8"))
         if self.config.enable_prompt_cache_affinity:
             self.prompt_affinity.observe(
                 model_id=model,
@@ -515,7 +531,13 @@ BOUNDED EVIDENCE
             "worker_completed" if result.ok else "worker_failed",
             planned.envelope.role,
             attempt_id=attempt,
-            metrics={**result.usage, "latency_ms": elapsed},
+            metrics={
+                **result.usage,
+                "latency_ms": elapsed,
+                "context_bytes": context_bytes,
+                "tool_calls": tool_calls,
+                "agent_calls": 1,
+            },
             payload={
                 "adapter": adapter.name,
                 "model": model,
@@ -1095,6 +1117,10 @@ BOUNDED EVIDENCE
             "escalations": 0,
             "deterministic_events": 0,
             "weighted_usage": 0.0,
+            "context_bytes": 0,
+            "tool_calls": 0,
+            "agent_calls": 0,
+            "trajectory_steps": len(events),
         }
         for event in events:
             if event.event == "route_selected":
@@ -1107,6 +1133,15 @@ BOUNDED EVIDENCE
                 totals["deterministic_events"] += 1
             totals["latency_ms"] += int(
                 event.metrics.get("latency_ms", 0)
+            )
+            totals["context_bytes"] += int(
+                event.metrics.get("context_bytes", 0)
+            )
+            totals["tool_calls"] += int(
+                event.metrics.get("tool_calls", 0)
+            )
+            totals["agent_calls"] += int(
+                event.metrics.get("agent_calls", 0)
             )
             if event.actor == "head":
                 totals["head_input_tokens"] += int(

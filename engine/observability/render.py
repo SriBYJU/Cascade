@@ -108,6 +108,10 @@ def render_stats(stats: dict[str, Any]) -> str:
         f"RETRIES: {int(stats.get('retries', 0))}",
         f"ESCALATIONS: {int(stats.get('escalations', 0))}",
         f"MODEL LATENCY: {int(stats.get('latency_ms', 0))}ms",
+        f"CONTEXT TRANSFER: {int(stats.get('context_bytes', 0))} bytes",
+        f"TOOL CALLS: {int(stats.get('tool_calls', 0))}",
+        f"AGENT CALLS: {int(stats.get('agent_calls', 0))}",
+        f"TRAJECTORY STEPS: {int(stats.get('trajectory_steps', 0))}",
     ]
     cache = stats.get("cache")
     if isinstance(cache, dict):
