@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   benchmark:
@@ -66,9 +66,79 @@ jobs:
             printf 'CODEX_ACCESS_TOKEN=%s\n' "$CODEX_ACCESS_TOKEN_SECRET" >> "$GITHUB_ENV"
             echo "Using configured CODEX_ACCESS_TOKEN secret."
           else
-            echo "::error::No CODEX_API_KEY, OPENAI_API_KEY, or CODEX_ACCESS_TOKEN repository secret is configured."
-            exit 78
+            echo "No repository model credential is configured; falling back to ChatGPT device authentication."
+            echo "NEEDS_DEVICE_AUTH=1" >> "$GITHUB_ENV"
           fi
+
+      - name: Authenticate Codex with ChatGPT device code
+        if: env.NEEDS_DEVICE_AUTH == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          LOG="$RUNNER_TEMP/codex-device-login.log"
+          STATUS="$RUNNER_TEMP/codex-device-login.status"
+          : > "$LOG"
+
+          (
+            set +e
+            timeout 900s codex login --device-auth >"$LOG" 2>&1
+            echo "$?" > "$STATUS"
+          ) &
+          LOGIN_PID=$!
+
+          for _ in $(seq 1 45); do
+            if grep -Eiq 'https?://|code|device' "$LOG"; then
+              sleep 2
+              break
+            fi
+            if ! kill -0 "$LOGIN_PID" 2>/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+
+          if ! kill -0 "$LOGIN_PID" 2>/dev/null; then
+            cat "$LOG"
+            wait "$LOGIN_PID" || true
+            test -f "$STATUS" && exit "$(cat "$STATUS")"
+            exit 1
+          fi
+
+          BODY="$(cat "$LOG")"
+          if [ -z "$BODY" ]; then
+            echo "::error::Codex device login did not emit authorization instructions."
+            kill "$LOGIN_PID" || true
+            exit 1
+          fi
+
+          DRAFT_JSON="$RUNNER_TEMP/device-auth-release.json"
+          jq -n \
+            --arg tag "device-auth-$GITHUB_RUN_ID" \
+            --arg name "TEMPORARY Codex device authentication — run $GITHUB_RUN_ID" \
+            --arg body "$BODY" \
+            '{tag_name:$tag,name:$name,body:$body,draft:true,prerelease:true}' \
+            > "$DRAFT_JSON"
+
+          RELEASE_JSON="$(gh api --method POST "repos/$GITHUB_REPOSITORY/releases" --input "$DRAFT_JSON")"
+          RELEASE_ID="$(printf '%s' "$RELEASE_JSON" | jq -r '.id')"
+          echo "DEVICE_DRAFT_RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
+          echo "Temporary private draft release created for the device authorization instructions."
+
+          wait "$LOGIN_PID" || true
+          LOGIN_STATUS="$(cat "$STATUS" 2>/dev/null || echo 1)"
+          if [ "$LOGIN_STATUS" -ne 0 ]; then
+            echo "::error::Codex device authentication did not complete successfully."
+            exit "$LOGIN_STATUS"
+          fi
+          echo "Codex ChatGPT device authentication completed."
+
+      - name: Delete temporary device-auth draft release
+        if: always() && env.DEVICE_DRAFT_RELEASE_ID != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/$DEVICE_DRAFT_RELEASE_ID"
 
       - name: Write dated real model profile
         run: |
