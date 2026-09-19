@@ -101,7 +101,7 @@ def test_high_risk_change_requires_read_only_reviewer(tmp_path: Path):
         allowed_paths=["permissions.py"],
     )
 
-    assert result["status"] == "verified"
+    assert result["status"] == "verified", result
     assert result["review"]["passed"] is True
     assert adapter.sandboxes[-1] == "read-only"
 
@@ -119,5 +119,5 @@ def test_failed_high_risk_review_blocks_merge_ready_state(tmp_path: Path):
     )
 
     assert result["status"] == "blocked"
-    assert result["reason"] == "required reviewer failed"
+    assert result["reason"] == "required reviewer failed", result
     assert result["review"]["passed"] is False
