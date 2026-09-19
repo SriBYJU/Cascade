@@ -94,7 +94,7 @@ class CascadeRuntime:
         )
         self.registry = CapabilityRegistry(self.config.capability_map)
         self.router = Router(self.registry, self.budgets)
-        self.codex = CodexAdapter()
+        self.codex: ModelAdapter = CodexAdapter()
         self.ollama = OllamaAdapter()
         self.vllm = VLLMAdapter()
         self.circuits = CircuitBreaker(self.db)

@@ -202,7 +202,7 @@ class EvaluationHarness:
             try:
                 self._init_fixture(case, root)
                 runtime = CascadeRuntime(root)
-                setattr(runtime, "codex", self.adapter)
+                runtime.codex = self.adapter
                 runtime.config.local_mode = False
                 runtime.config.cloud_fallback = True
                 if model != "auto":
