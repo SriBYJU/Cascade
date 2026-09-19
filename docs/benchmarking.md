@@ -151,6 +151,11 @@ optimizer release-benchmark \
 
 The command requires at least three repeats and produces the live controlled-model-pool report, Context Firewall and cache ablations, optional local baseline, sequential-vs-parallel live report, explicit savings summaries, raw trial trajectories, and the release-gate result in one bundle. It requires a real authenticated model runtime and intentionally returns `environment-unavailable` rather than synthetic performance data when that runtime is absent.
 
+Release-benchmark model calls are ephemeral and ignore the operator's user
+configuration while retaining normal Codex authentication. This prevents the
+experiment from creating persistent task history or inheriting unrelated user
+plugins, MCP servers, and model defaults.
+
 
 ## Benchmark trace privacy
 

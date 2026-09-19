@@ -13,6 +13,15 @@ class CodexAdapter:
     name = "codex"
     VALID_SANDBOXES = {"read-only", "workspace-write"}
 
+    def __init__(
+        self,
+        *,
+        ephemeral: bool = False,
+        ignore_user_config: bool = False,
+    ) -> None:
+        self.ephemeral = ephemeral
+        self.ignore_user_config = ignore_user_config
+
     def available(self) -> bool:
         return shutil.which("codex") is not None
 
@@ -58,10 +67,18 @@ class CodexAdapter:
         command = [
             "codex",
             "exec",
+        ]
+        if self.ephemeral:
+            command.append("--ephemeral")
+        if self.ignore_user_config:
+            command.append("--ignore-user-config")
+        command.extend(
+            [
             "--json",
             "--sandbox",
             sandbox_mode,
-        ]
+            ]
+        )
         if model and model != "auto":
             command.extend(["--model", model])
         command.extend(

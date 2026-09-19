@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from ..adapters.codex import CodexAdapter
 from ..config import CascadeConfig
 from ..release_gate import release_gate
 from ..router.profile_loader import load_profiles
@@ -90,7 +91,15 @@ def run_release_benchmark(
     cases = load_cases(
         root / "benchmarks" / "fixtures" / "live_tasks.json"
     )
-    live_harness = EvaluationHarness(root, profiles=profiles)
+    adapter = CodexAdapter(
+        ephemeral=True,
+        ignore_user_config=True,
+    )
+    live_harness = EvaluationHarness(
+        root,
+        adapter=adapter,
+        profiles=profiles,
+    )
     live_report = live_harness.run(
         cases,
         configs=configs,
@@ -120,6 +129,7 @@ def run_release_benchmark(
     config = CascadeConfig.load(root)
     parallel_report = ParallelLiveHarness(
         root,
+        adapter=adapter,
         profiles=profiles,
     ).run(
         scenarios,
