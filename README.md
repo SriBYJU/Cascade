@@ -259,6 +259,17 @@ trace + why + stats
 run --apply  (only when you want integration)
 ```
 
+### Common first-run problems
+
+| What you see | What to do |
+|---|---|
+| `optimizer doctor` says Codex is unavailable | Install/sign in to the Codex CLI, then rerun `optimizer doctor`. Planning/shadow mode can still work without model execution. |
+| `project-install` reports a conflicting file | Rerun with `--dry-run`, inspect the conflict, and only use `--overwrite` if you intentionally want Cascade to back up and replace it. |
+| A write task says `verified` but your checkout did not change | That is expected without `--apply`; the verified result remains isolated in its worktree. |
+| `--apply` refuses to integrate | Make the current checkout clean and address the reported scope/merge/validation failure; Cascade does not force integration. |
+| `optimizer savings` has no result yet | Run a measured live benchmark containing both `plain` and `cascade`. Cascade does not estimate a savings percentage when the comparison was not measured. |
+| Local-only mode cannot execute a writer | The built-in Ollama/vLLM adapters are prompt-only; with cloud fallback disabled, unsafe unsupported routes fail closed instead of silently going to cloud. |
+
 ### Optional: install Cascade from the Codex plugin marketplace
 
 Current Codex supports repository marketplaces. Add Cascade with:
