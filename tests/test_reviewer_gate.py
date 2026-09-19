@@ -101,7 +101,7 @@ def test_high_risk_change_requires_read_only_reviewer(tmp_path: Path):
         allowed_paths=["permissions.py"],
     )
 
-    if result["status"] != "verified":\n        print("DEBUG_RESULT", result)\n    assert result["status"] == "verified", result
+    assert result["status"] == "verified", result
     assert result["review"]["passed"] is True
     assert adapter.sandboxes[-1] == "read-only"
 

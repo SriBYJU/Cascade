@@ -109,7 +109,7 @@ def test_ambiguous_security_write_gets_architect_then_builder(
         allowed_paths=["permissions.py"],
     )
 
-    if result["status"] != "verified":\n        print("DEBUG_RESULT", result)\n    assert result["status"] == "verified", result
+    assert result["status"] == "verified", result
     assert adapter.calls[0] == "architect:read-only"
     assert "builder:workspace-write" in adapter.calls
     assert adapter.calls[-1] == "reviewer:read-only"
