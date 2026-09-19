@@ -28,5 +28,11 @@ jobs:
       - run: python -m mypy engine
       - run: python -m pytest
       - run: python scripts/verify_plugin_layout.py
+      - run: python scripts/release_preflight.py
+      - name: Build and inspect wheel
+        if: runner.os == 'Linux' && matrix.python-version == '3.12'
+        run: |
+          python -m build --wheel --outdir .cascade/dist
+          python scripts/release_preflight.py --wheel-dir .cascade/dist
       - run: python -m compileall -q engine
       - run: optimizer benchmark

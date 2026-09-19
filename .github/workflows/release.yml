@@ -20,6 +20,8 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install --upgrade build
       - run: python -m build
+      - name: Verify tag, wheel resources, OIDC and attestations
+        run: python scripts/release_preflight.py --tag "$GITHUB_REF_NAME" --wheel-dir dist
       - uses: actions/attest@c32b4b8b198b65d0bd9d63490e847ff7b53989d4 # v4.0.0
         with:
           subject-path: 'dist/*'
