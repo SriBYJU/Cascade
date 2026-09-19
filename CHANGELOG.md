@@ -26,6 +26,8 @@ Initial implementation from the Final Master Handoff:
 - cross-platform Linux/macOS/Windows CI on Python 3.11/3.12/3.13
 - release preflight, OIDC trusted publishing, artifact attestation, and `optimizer release-gate`
 - structural repository graph with Python/JS/TS plus Go/Rust extraction and monorepo-aware validators
+- declared Java/Kotlin Gradle/Maven and Ruby/Rails/RSpec/RuboCop validator discovery with no network installs or guessed tools
+- separate monorepo package-boundary live benchmark fixture with read-only and bounded-write cases
 - provider-neutral capability profiles, local-model diagnostics, local-only cloud fail-closed behavior, circuit breakers, and route-regret metrics
 - one-command `optimizer release-benchmark` evidence bundle
 - beginner README walkthrough and `optimizer tutorial` terminal guide
