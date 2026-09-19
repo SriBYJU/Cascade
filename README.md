@@ -462,7 +462,7 @@ python -m compileall -q engine
 optimizer benchmark
 ```
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md), [`SECURITY.md`](SECURITY.md), and [`ROADMAP.md`](ROADMAP.md).
+See [`CONTRIBUTING.md`](CONTRIBUTING.md), [`SECURITY.md`](SECURITY.md), [`ROADMAP.md`](ROADMAP.md), and the [`final release runbook`](docs/final-release-runbook.md).
 
 ## License
 
