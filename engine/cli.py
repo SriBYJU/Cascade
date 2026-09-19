@@ -34,6 +34,7 @@ from .project_install import (
     uninstall_project,
 )
 from .router.learner import AdmittedEvidenceStore
+from .router.profile_loader import load_profiles
 from .router.policy_compiler import (
     activate_policy,
     activation_ready,
@@ -186,6 +187,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--repeats", type=int, default=1)
     p.add_argument("--model", default="auto")
+    p.add_argument(
+        "--profiles",
+        help=(
+            "provider-neutral model profile JSON used for strongest, "
+            "efficient, local and Cascade routing comparisons"
+        ),
+    )
     p.add_argument(
         "--effort",
         choices=[effort.value for effort in ReasoningEffort],
@@ -533,7 +541,15 @@ def main(argv: list[str] | None = None) -> int:
             if output_arg.suffix == ""
             else output_arg.parent / output_arg.stem
         )
-        live_harness = EvaluationHarness(repo)
+        profiles = (
+            load_profiles(repo / args.profiles)
+            if args.profiles
+            else None
+        )
+        live_harness = EvaluationHarness(
+            repo,
+            profiles=profiles,
+        )
         report = live_harness.run(
             cases,
             configs=configs,
