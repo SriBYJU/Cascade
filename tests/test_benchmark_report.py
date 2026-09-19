@@ -97,3 +97,53 @@ def test_vwet_is_derived_from_verified_work_and_weighted_usage():
     assert summary["cascade"][
         "verified_work_per_1k_weighted_tokens"
     ] == 1.0
+
+
+
+def test_pass_at_metrics_group_repeats_by_case():
+    from engine.evaluation.models import TrialResult, aggregate_trials
+
+    trials = [
+        TrialResult(
+            case_id="a",
+            category="x",
+            config="cascade",
+            repeat=1,
+            verified_success=False,
+            failure_kind="task",
+            wall_time_ms=1,
+        ),
+        TrialResult(
+            case_id="a",
+            category="x",
+            config="cascade",
+            repeat=2,
+            verified_success=True,
+            failure_kind=None,
+            wall_time_ms=1,
+        ),
+        TrialResult(
+            case_id="b",
+            category="x",
+            config="cascade",
+            repeat=1,
+            verified_success=True,
+            failure_kind=None,
+            wall_time_ms=1,
+        ),
+        TrialResult(
+            case_id="b",
+            category="x",
+            config="cascade",
+            repeat=2,
+            verified_success=True,
+            failure_kind=None,
+            wall_time_ms=1,
+        ),
+    ]
+
+    row = aggregate_trials(trials)["cascade"]
+
+    assert row["cases"] == 2
+    assert row["pass_at_1"] == 0.5
+    assert row["pass_at_3"] == 1.0
