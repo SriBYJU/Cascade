@@ -376,6 +376,34 @@ class ParallelLiveHarness:
             ]
             seq_mean = sum(seq) / len(seq) if seq else 0.0
             par_mean = sum(par) / len(par) if par else 0.0
+            def mode_metric(
+                mode: str,
+                key: str,
+            ) -> float:
+                values: list[float] = []
+                for run in scenario_runs:
+                    if run.get("mode") != mode:
+                        continue
+                    stats = run.get("stats")
+                    if not isinstance(stats, dict):
+                        continue
+                    value = stats.get(key)
+                    if isinstance(value, (int, float)):
+                        values.append(float(value))
+                return sum(values) / len(values) if values else 0.0
+
+            merge_conflicts = 0
+            for run in scenario_runs:
+                results = run.get("results")
+                if not isinstance(results, dict):
+                    continue
+                for result in results.values():
+                    if not isinstance(result, dict):
+                        continue
+                    reason = str(result.get("reason", "")).lower()
+                    if "merge conflict" in reason:
+                        merge_conflicts += 1
+
             summary[scenario.scenario_id] = {
                 "sequential_wall_ms_mean": seq_mean,
                 "parallel_wall_ms_mean": par_mean,
@@ -384,6 +412,46 @@ class ParallelLiveHarness:
                     if par_mean > 0
                     else 0.0
                 ),
+                "sequential_model_tokens_mean": mode_metric(
+                    "sequential",
+                    "total_model_tokens",
+                ),
+                "parallel_model_tokens_mean": mode_metric(
+                    "parallel",
+                    "total_model_tokens",
+                ),
+                "sequential_weighted_usage_mean": mode_metric(
+                    "sequential",
+                    "weighted_usage",
+                ),
+                "parallel_weighted_usage_mean": mode_metric(
+                    "parallel",
+                    "weighted_usage",
+                ),
+                "sequential_context_bytes_mean": mode_metric(
+                    "sequential",
+                    "context_bytes",
+                ),
+                "parallel_context_bytes_mean": mode_metric(
+                    "parallel",
+                    "context_bytes",
+                ),
+                "sequential_retries_mean": mode_metric(
+                    "sequential",
+                    "retries",
+                ),
+                "parallel_retries_mean": mode_metric(
+                    "parallel",
+                    "retries",
+                ),
+                "dependency_edges": max(
+                    (
+                        int(run.get("dependency_edges", 0))
+                        for run in scenario_runs
+                    ),
+                    default=0,
+                ),
+                "merge_conflicts_observed": merge_conflicts,
                 "all_verified": all(
                     bool(run.get("verified_success"))
                     for run in scenario_runs
