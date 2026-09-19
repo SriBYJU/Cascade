@@ -38,6 +38,8 @@ def test_savings_turns_negative_delta_into_positive_headline():
     assert result["token_savings_percent"] == pytest.approx(63.0)
     assert result["weighted_usage_savings_percent"] == pytest.approx(70.0)
     assert result["wall_time_savings_percent"] == pytest.approx(28.0)
+    assert result["head_model_token_savings_percent"] == pytest.approx(82.0)
+    assert result["context_transfer_savings_percent"] == pytest.approx(55.0)
     assert result["tokens_saved_mean"] == pytest.approx(6300.0)
     assert result["token_claim_eligible"] is True
 
@@ -56,6 +58,8 @@ def test_rendered_savings_is_immediately_readable():
     assert "CASCADE SAVINGS" in rendered
     assert "Token savings:             63.0%" in rendered
     assert "Weighted model-use saving: 70.0%" in rendered
+    assert "Head-model token saving:   82.0%" in rendered
+    assert "Context-transfer saving:   55.0%" in rendered
     assert "Verified success:         96.0% vs 96.0%" in rendered
     assert "6 matched comparisons" in rendered
 

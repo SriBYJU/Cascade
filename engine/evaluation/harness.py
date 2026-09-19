@@ -251,6 +251,18 @@ class EvaluationHarness:
                 head_in = int(usage.get("input_tokens", 0))
                 head_out = int(usage.get("output_tokens", 0))
                 cached = int(usage.get("cached_input_tokens", 0))
+                tool_item_types = {
+                    "command_execution",
+                    "mcp_tool_call",
+                    "web_search",
+                }
+                tool_calls = sum(
+                    1
+                    for event in result.events
+                    if event.get("type") == "item.completed"
+                    and isinstance(event.get("item"), dict)
+                    and event["item"].get("type") in tool_item_types
+                )
                 return TrialResult(
                     case_id=case.case_id,
                     category=case.category,
@@ -264,6 +276,10 @@ class EvaluationHarness:
                     cached_input_tokens=cached,
                     total_model_tokens=head_in + head_out,
                     weighted_usage=float(head_in + head_out),
+                    context_bytes=len(case.task.encode("utf-8")),
+                    tool_calls=tool_calls,
+                    agent_calls=1,
+                    trajectory_steps=max(1, len(result.events)),
                     raw_trace=trace,
                     error=result.error,
                     acceptance=checks,
@@ -415,6 +431,12 @@ class EvaluationHarness:
                     cached_input_tokens=int(stats.get("cached_input_tokens", 0)),
                     total_model_tokens=int(stats.get("total_model_tokens", 0)),
                     weighted_usage=float(stats.get("weighted_usage", 0.0)),
+                    context_bytes=int(stats.get("context_bytes", 0)),
+                    tool_calls=int(stats.get("tool_calls", 0)),
+                    agent_calls=int(stats.get("agent_calls", 0)),
+                    trajectory_steps=int(
+                        stats.get("trajectory_steps", 0)
+                    ),
                     retries=int(stats.get("retries", 0)),
                     escalations=int(stats.get("escalations", 0)),
                     raw_trace=trace,
