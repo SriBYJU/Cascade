@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import shutil
+import threading
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -15,6 +16,20 @@ class Worktree:
     path: Path
     branch: str
     base_ref: str
+
+
+_LOCKS_GUARD = threading.Lock()
+_REPO_LOCKS: dict[str, threading.RLock] = {}
+
+
+def _repo_lock(path: Path) -> threading.RLock:
+    key = str(path.resolve())
+    with _LOCKS_GUARD:
+        lock = _REPO_LOCKS.get(key)
+        if lock is None:
+            lock = threading.RLock()
+            _REPO_LOCKS[key] = lock
+        return lock
 
 
 class WorktreeManager:
@@ -41,10 +56,18 @@ class WorktreeManager:
         branch = f"cascade/{slug}"
         if path.exists():
             raise FileExistsError(f"worktree already exists: {path}")
-        result = run_command(["git", "worktree", "add", "-b", branch, str(path), base_ref], self.repo_root, timeout_seconds=60)
-        if result.exit_code != 0:
-            raise RuntimeError(f"failed to create worktree: {result.stderr or result.stdout}")
-        self._verify(path, branch)
+        with _repo_lock(self.repo_root):
+            result = run_command(
+                ["git", "worktree", "add", "-b", branch, str(path), base_ref],
+                self.repo_root,
+                timeout_seconds=60,
+            )
+            if result.exit_code != 0:
+                raise RuntimeError(
+                    "failed to create worktree: "
+                    f"{result.stderr or result.stdout}"
+                )
+            self._verify(path, branch)
         return Worktree(task_id=task_id, path=path, branch=branch, base_ref=base_ref)
 
     def _verify(self, path: Path, expected_branch: str) -> None:
@@ -63,14 +86,32 @@ class WorktreeManager:
         if force:
             args.append("--force")
         args.append(str(worktree.path))
-        result = run_command(args, self.repo_root, timeout_seconds=60)
-        if result.exit_code != 0 and worktree.path.exists():
-            raise RuntimeError(f"failed to remove worktree: {result.stderr or result.stdout}")
-        if delete_branch:
-            run_command(["git", "branch", "-D", worktree.branch], self.repo_root, timeout_seconds=30)
+        with _repo_lock(self.repo_root):
+            result = run_command(
+                args,
+                self.repo_root,
+                timeout_seconds=60,
+            )
+            if result.exit_code != 0 and worktree.path.exists():
+                raise RuntimeError(
+                    "failed to remove worktree: "
+                    f"{result.stderr or result.stdout}"
+                )
+            if delete_branch:
+                run_command(
+                    ["git", "branch", "-D", worktree.branch],
+                    self.repo_root,
+                    timeout_seconds=30,
+                )
 
     def prune(self) -> None:
-        run_command(["git", "worktree", "prune"], self.repo_root)
-        for child in self.worktrees_dir.iterdir() if self.worktrees_dir.exists() else []:
-            if child.is_dir() and not (child / ".git").exists():
-                shutil.rmtree(child, ignore_errors=True)
+        with _repo_lock(self.repo_root):
+            run_command(["git", "worktree", "prune"], self.repo_root)
+            children = (
+                list(self.worktrees_dir.iterdir())
+                if self.worktrees_dir.exists()
+                else []
+            )
+            for child in children:
+                if child.is_dir() and not (child / ".git").exists():
+                    shutil.rmtree(child, ignore_errors=True)
