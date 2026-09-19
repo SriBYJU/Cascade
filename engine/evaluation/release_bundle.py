@@ -7,7 +7,7 @@ from typing import Any
 from ..config import CascadeConfig
 from ..release_gate import release_gate
 from ..router.profile_loader import load_profiles
-from ..schemas import ReasoningEffort
+from ..schemas import Capability, ReasoningEffort
 from .harness import EvaluationHarness
 from .models import load_cases
 from .parallel_live import (
@@ -35,6 +35,36 @@ def run_release_benchmark(
     if not profile_path.is_absolute():
         profile_path = root / profile_path
     profiles = load_profiles(profile_path)
+    required_capabilities = {
+        Capability.QUICK,
+        Capability.EXPLORE,
+        Capability.BUILD,
+        Capability.DEBUG,
+        Capability.DEEP,
+        Capability.CRITICAL,
+    }
+    missing_capabilities = sorted(
+        capability.value
+        for capability in required_capabilities - set(profiles)
+    )
+    unavailable_capabilities = sorted(
+        capability.value
+        for capability, profile in profiles.items()
+        if capability in required_capabilities
+        and not profile.available
+    )
+    if missing_capabilities:
+        raise ValueError(
+            "release benchmark requires explicit profiles for every "
+            "model-backed capability; missing: "
+            + ", ".join(missing_capabilities)
+        )
+    if unavailable_capabilities:
+        raise ValueError(
+            "release benchmark requires every model-backed capability "
+            "profile to be available; unavailable: "
+            + ", ".join(unavailable_capabilities)
+        )
 
     out = Path(output_dir)
     if not out.is_absolute():
