@@ -62,10 +62,12 @@ class EvaluationHarness:
 
     @staticmethod
     def _version(command: list[str]) -> str | None:
-        if not shutil.which(command[0]):
+        executable = shutil.which(command[0])
+        if not executable:
             return None
+        resolved = [executable, *command[1:]]
         result = run_command(
-            command,
+            resolved,
             ".",
             timeout_seconds=10,
             output_cap_chars=2000,
