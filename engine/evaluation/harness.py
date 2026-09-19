@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import platform
+import shutil
 import tempfile
 import time
 from pathlib import Path
@@ -9,12 +10,14 @@ from typing import Any
 
 from ..adapters.base import ModelAdapter
 from ..adapters.codex import CodexAdapter
+from ..policy_lock import load_policy, policy_digest
 from ..router.capability_registry import CapabilityRegistry
 from ..router.router import Router
 from ..runtime import CascadeRuntime
 from ..schemas import Capability, ReasoningEffort
 from ..tools.runner import run_command
 from .models import BenchmarkCase, TrialResult, aggregate_trials
+from .report import compare_summaries, render_markdown_report
 
 
 class EvaluationHarness:
@@ -46,6 +49,59 @@ class EvaluationHarness:
             output_cap_chars=2000,
         )
         return result.stdout.strip() if result.exit_code == 0 else None
+
+    @staticmethod
+    def _version(command: list[str]) -> str | None:
+        if not shutil.which(command[0]):
+            return None
+        result = run_command(
+            command,
+            ".",
+            timeout_seconds=10,
+            output_cap_chars=2000,
+        )
+        if result.exit_code != 0:
+            return None
+        output = (result.stdout or result.stderr).strip()
+        return output.splitlines()[0] if output else None
+
+    def _environment(self) -> dict[str, Any]:
+        adapter_version = None
+        version_method = getattr(self.adapter, "version", None)
+        if callable(version_method):
+            try:
+                adapter_version = version_method()
+            except Exception:
+                adapter_version = None
+        return {
+            "system": platform.system(),
+            "release": platform.release(),
+            "machine": platform.machine(),
+            "python": platform.python_version(),
+            "git": self._version(["git", "--version"]),
+            "node": self._version(["node", "--version"]),
+            "npm": self._version(["npm", "--version"]),
+            "go": self._version(["go", "version"]),
+            "rustc": self._version(["rustc", "--version"]),
+            "cargo": self._version(["cargo", "--version"]),
+            "adapter": self.adapter.name,
+            "adapter_version": adapter_version,
+        }
+
+    def _policy_snapshot(self) -> dict[str, Any] | None:
+        path = self.repo_root / "policy.lock.yaml"
+        if not path.exists():
+            return None
+        try:
+            policy = load_policy(path)
+        except (OSError, ValueError, json.JSONDecodeError):
+            return None
+        return {
+            "version": policy.version,
+            "status": policy.status,
+            "digest": policy_digest(policy),
+            "base_evidence_snapshot": policy.base_evidence_snapshot,
+        }
 
     @staticmethod
     def _init_fixture(case: BenchmarkCase, root: Path) -> None:
@@ -388,11 +444,13 @@ class EvaluationHarness:
                         )
                     trials.append(trial)
 
+        summary = aggregate_trials(trials)
         report = {
             "measured": True,
             "status": "completed",
             "source_commit": self._source_commit(),
-            "python": platform.python_version(),
+            "environment": self._environment(),
+            "policy_lock": self._policy_snapshot(),
             "adapter": self.adapter.name,
             "model": model,
             "reasoning_effort": effort.value,
@@ -400,9 +458,14 @@ class EvaluationHarness:
             "configs": configs,
             "case_ids": [case.case_id for case in cases],
             "trials": [trial.to_dict() for trial in trials],
-            "summary": aggregate_trials(trials),
+            "summary": summary,
+            "comparisons": compare_summaries(summary),
+            "failed_trials": sum(
+                1 for trial in trials if not trial.verified_success
+            ),
         }
         (out / "report.json").write_text(
             json.dumps(report, indent=2, sort_keys=True, default=str)
         )
+        (out / "report.md").write_text(render_markdown_report(report))
         return report
