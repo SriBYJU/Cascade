@@ -231,6 +231,7 @@ def discover_validators(root: str | Path) -> list[ValidatorSpec]:
         ):
             if script not in scripts:
                 continue
+            command: tuple[str, ...]
             if manager == "npm":
                 command = ("npm", "run", script, "--if-present")
             elif manager == "pnpm":
