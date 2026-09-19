@@ -49,3 +49,10 @@ When `local_mode=true` and `cloud_fallback=false`, Cascade now fails closed inst
 ## Repository symlink boundary
 
 Repository files are attacker-controlled data. Cascade refuses to index, retrieve, render into model context, or secret-scan paths that are symlinks, traverse `..`, resolve outside the repository root, or cross a symlinked directory. This prevents a malicious checkout from redirecting Context Firewall reads into files outside the project.
+
+
+## Validator execution boundary
+
+Deterministic validation may execute repository-owned test/lint/type commands. Cascade launches those subprocesses with a minimal toolchain environment rather than inheriting the user's full environment: common provider/API credentials are not forwarded, HOME/USERPROFILE/XDG paths point to a temporary validator home, prompts are disabled where possible, and output/time remain capped.
+
+This is **not an operating-system sandbox**. Repository tests can still execute code with the current OS user's filesystem/network permissions. Treat running validators in an unknown hostile repository as code execution; use an external container/VM or equivalent sandbox when stronger isolation is required.
