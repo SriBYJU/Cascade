@@ -16,4 +16,4 @@
 
 ## Current implementation
 
-The repository contains executable foundations for all phases so development can proceed without redesigning architecture. Claims that require real Codex/model runs remain intentionally unclaimed until measured.
+The repository now contains executable implementations and automated gates across all phases. `optimizer release-gate` verifies the engineering/reproducibility prerequisites. The remaining non-synthetic 1.0 evidence step is to run the repeated live model benchmark on an authenticated Codex/model environment and attach that measured report; claims that require those real model runs remain intentionally unclaimed until measured.

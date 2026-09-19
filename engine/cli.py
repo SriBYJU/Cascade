@@ -34,6 +34,7 @@ from .project_install import (
     project_status,
     uninstall_project,
 )
+from .release_gate import release_gate, render_release_gate
 from .router.learner import AdmittedEvidenceStore
 from .router.profile_loader import load_profiles
 from .router.policy_compiler import (
@@ -264,6 +265,16 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         help="exact proposal digest printed by policy propose/diff",
     )
+
+    p = sub.add_parser(
+        "release-gate",
+        help="run final engineering/reproducibility release checks",
+    )
+    p.add_argument(
+        "--benchmark-report",
+        help="optional measured live report.json for 1.0 evidence checks",
+    )
+    p.add_argument("--json", action="store_true")
 
     p = sub.add_parser(
         "project-install",
@@ -700,6 +711,17 @@ def main(argv: list[str] | None = None) -> int:
             }
         )
         return 0
+
+    if args.command == "release-gate":
+        result = release_gate(
+            repo,
+            benchmark_report=args.benchmark_report,
+        )
+        if args.json:
+            _print(result)
+        else:
+            print(render_release_gate(result))
+        return 0 if result["engineering_ready"] else 1
 
     if args.command == "project-install":
         target = Path(args.target).resolve() if args.target else repo
