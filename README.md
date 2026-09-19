@@ -259,6 +259,28 @@ trace + why + stats
 run --apply  (only when you want integration)
 ```
 
+### Optional: install Cascade from the Codex plugin marketplace
+
+Current Codex supports repository marketplaces. Add Cascade with:
+
+```bash
+codex plugin marketplace add SriBYJU/Cascade
+codex plugin marketplace list
+```
+
+Then restart the ChatGPT desktop app, open the **Plugin Directory**, choose **Cascade Local**, and install **Cascade**. Start a new conversation after installation so the plugin skill is freshly discovered.
+
+The two installation paths are complementary:
+
+- the **plugin** exposes the reusable Cascade skill;
+- `optimizer project-install` installs the six project-scoped custom agents into a specific repository.
+
+You can also print the beginner workflow at any time:
+
+```bash
+optimizer tutorial
+```
+
 ## Architecture
 
 ```text
