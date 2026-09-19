@@ -136,13 +136,43 @@ def aggregate_trials(trials: list[TrialResult]) -> dict[str, Any]:
         verified_rate = (
             successes / len(items) if items else 0.0
         )
+        by_case: dict[str, list[TrialResult]] = defaultdict(list)
+        for item in items:
+            by_case[item.case_id].append(item)
+        pass_at_1_count = 0
+        pass_at_3_count = 0
+        for case_trials in by_case.values():
+            ordered = sorted(
+                case_trials,
+                key=lambda trial: trial.repeat,
+            )
+            if ordered and ordered[0].verified_success:
+                pass_at_1_count += 1
+            if any(
+                trial.verified_success
+                for trial in ordered
+                if trial.repeat <= 3
+            ):
+                pass_at_3_count += 1
+        case_count = len(by_case)
         weighted_mean = (
             statistics.mean(weighted) if weighted else 0.0
         )
         result[config] = {
             "trials": len(items),
+            "cases": case_count,
             "verified_successes": successes,
             "verified_success_rate": verified_rate,
+            "pass_at_1": (
+                pass_at_1_count / case_count
+                if case_count
+                else 0.0
+            ),
+            "pass_at_3": (
+                pass_at_3_count / case_count
+                if case_count
+                else 0.0
+            ),
             "wall_time_ms_mean": statistics.mean(wall) if wall else 0.0,
             "wall_time_ms_stdev": _stdev(wall),
             "total_model_tokens_mean": statistics.mean(total_tokens)
