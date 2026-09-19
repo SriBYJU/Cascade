@@ -23,6 +23,7 @@ from .context.retrieval import (
     collect_evidence,
     estimate_context_tokens,
 )
+from .metrics.route_regret import best_known_capability, route_regret
 from .router.capability_registry import CapabilityRegistry
 from .router.classifier import classify_step
 from .router.learner import AdmittedEvidenceStore
@@ -1568,6 +1569,45 @@ DIFF
             + totals["worker_input_tokens"]
             + totals["worker_output_tokens"]
         )
+        regret_values: list[int] = []
+        over_routed = 0
+        under_routed = 0
+        summaries = self.admitted_evidence.summaries()
+        for event in events:
+            if event.event != "route_selected":
+                continue
+            step_type = event.payload.get("step_type")
+            capability_name = event.payload.get("capability")
+            if not isinstance(step_type, str) or not isinstance(
+                capability_name,
+                str,
+            ):
+                continue
+            try:
+                chosen = Capability(capability_name)
+            except ValueError:
+                continue
+            best = best_known_capability(
+                summaries,
+                step_type,
+            )
+            if best is None:
+                continue
+            regret = route_regret(chosen, best)
+            regret_values.append(regret.regret)
+            over_routed += int(regret.over_routed)
+            under_routed += int(regret.under_routed)
+
+        totals["route_regret"] = {
+            "samples": len(regret_values),
+            "mean": (
+                sum(regret_values) / len(regret_values)
+                if regret_values
+                else None
+            ),
+            "over_routed": over_routed,
+            "under_routed": under_routed,
+        }
         totals["cache"] = self.cache.stats()
         totals["prompt_cache_affinity"] = self.prompt_affinity.stats()
         return totals

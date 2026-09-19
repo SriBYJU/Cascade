@@ -97,3 +97,8 @@ optimizer benchmark --suite parallel-live \
 ```
 
 The current manifest contains a three-writer disjoint scenario and a mixed read/write scenario. Each writer is still isolated in its own worktree, acceptance is evaluated inside that worktree, and the report records full runtime stats plus sequential/parallel wall time. This is the appropriate surface for the Phase 5 latency claim; the scheduler-only benchmark remains a lower-level implementation check.
+
+
+## Route regret replay
+
+Once a task class has enough admitted objective evidence, `optimizer stats` compares each chosen route with the cheapest capability tier that has met the configured verified-success floor for that task class. Positive regret means over-routing to a stronger tier; negative regret flags a route below the best-known safe tier. The metric remains unavailable until the evidence threshold is met rather than fabricating an oracle from sparse runs.

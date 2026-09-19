@@ -120,6 +120,19 @@ def render_stats(stats: dict[str, Any]) -> str:
             f"{int(cache.get('entries', 0))} entries / "
             f"{int(cache.get('hits', 0))} hits"
         )
+    regret = stats.get("route_regret")
+    if isinstance(regret, dict):
+        mean = regret.get("mean")
+        mean_text = (
+            "n/a"
+            if mean is None
+            else f"{float(mean):.2f}"
+        )
+        lines.append(
+            "ROUTE REGRET: "
+            f"{mean_text} mean / "
+            f"{int(regret.get('samples', 0))} replay samples"
+        )
     affinity = stats.get("prompt_cache_affinity")
     if isinstance(affinity, dict):
         lines.append(
