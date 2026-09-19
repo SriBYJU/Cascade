@@ -292,6 +292,7 @@ Sidecars: budget manager, exact cache, single-flight, worktree manager, write-se
 |---|---|
 | `optimizer init` | Initialize local Cascade state. |
 | `optimizer doctor` | Detect Codex, local endpoints, hardware, toolchain, and validators. |
+| `optimizer tutorial` | Print the beginner end-to-end workflow in the terminal. |
 | `optimizer plan` | Preview route, risk, evidence scope, and expected worker. |
 | `optimizer run` | Execute the routed workflow. |
 | `optimizer resume` | Inspect persisted resumable work. |
