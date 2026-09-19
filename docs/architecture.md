@@ -30,3 +30,8 @@ Cascade is a Codex-native plugin with a portable Python 3.11+ local engine. Its 
 - No routing policy silently changes live behavior.
 - No public performance claim exists without reproducible traces.
 - Untrusted repository/tool text cannot promote itself to trusted instruction.
+
+
+## Structural repository map
+
+The repository map now persists an exact-fingerprint local cache under `.cascade/repo-map.json` and records package boundaries, entry points, resolved intra-repository imports, reverse import edges, and test-to-implementation targets. Retrieval scoring can therefore rank structural neighbors rather than relying only on filename/token overlap. Python resolution uses the standard AST; relative JS/TS imports receive lightweight local resolution. Optional tree-sitter/LSP enrichment remains a future adapter rather than a mandatory dependency.

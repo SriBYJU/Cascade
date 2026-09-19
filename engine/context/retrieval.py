@@ -22,9 +22,19 @@ def _score(
     path_tokens = _tokens(file.path)
     symbol_tokens = {symbol.lower() for symbol in file.symbols}
     import_tokens = _tokens(" ".join(file.imports))
+    structural_tokens = _tokens(
+        " ".join(
+            [
+                *file.references,
+                *file.referenced_by,
+                *file.test_targets,
+            ]
+        )
+    )
     lexical = len(query_tokens & path_tokens) * 4.0
     symbol = len(query_tokens & symbol_tokens) * 6.0
     imports = len(query_tokens & import_tokens) * 1.5
+    structural = len(query_tokens & structural_tokens) * 2.5
     risk = (
         1.5
         if query_tokens & {tag.lower() for tag in file.risk_tags}
@@ -44,7 +54,25 @@ def _score(
         if max_recency and file.git_recency
         else 0.0
     )
-    return lexical + symbol + imports + risk + test_bonus + 0.3 * recency
+    entry_bonus = (
+        0.5
+        if file.is_entry_point
+        and any(
+            token in query_tokens
+            for token in {"entry", "startup", "main", "server", "cli"}
+        )
+        else 0.0
+    )
+    return (
+        lexical
+        + symbol
+        + imports
+        + structural
+        + risk
+        + test_bonus
+        + entry_bonus
+        + 0.3 * recency
+    )
 
 
 def rank_files(

@@ -73,7 +73,7 @@ class PolicyLock(StrictModel):
 class CommandResult(StrictModel):
     command:list[str]; cwd:str; exit_code:int|None; stdout:str; stderr:str; duration_ms:int=Field(ge=0); timed_out:bool=False; truncated:bool=False
 class RepoFile(StrictModel):
-    path:str; language:str; size_bytes:int=Field(ge=0); lines:int=Field(ge=0); symbols:list[str]=Field(default_factory=list); imports:list[str]=Field(default_factory=list); git_recency:float=0.0; is_test:bool=False; risk_tags:list[str]=Field(default_factory=list)
+    path:str; language:str; size_bytes:int=Field(ge=0); lines:int=Field(ge=0); symbols:list[str]=Field(default_factory=list); imports:list[str]=Field(default_factory=list); package:str|None=None; references:list[str]=Field(default_factory=list); referenced_by:list[str]=Field(default_factory=list); test_targets:list[str]=Field(default_factory=list); git_recency:float=0.0; is_test:bool=False; is_entry_point:bool=False; risk_tags:list[str]=Field(default_factory=list)
 class RepoMap(StrictModel):
     root:str; fingerprint:str; generated_at:str=Field(default_factory=lambda:datetime.now(timezone.utc).isoformat()); files:list[RepoFile]=Field(default_factory=list)
 class ModelProfile(StrictModel):
