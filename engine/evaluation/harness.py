@@ -14,8 +14,9 @@ from ..policy_lock import load_policy, policy_digest
 from ..router.capability_registry import CapabilityRegistry
 from ..router.router import Router
 from ..runtime import CascadeRuntime
-from ..schemas import Capability, ReasoningEffort
+from ..schemas import Capability, ModelProfile, ReasoningEffort
 from ..tools.runner import run_command
+from .model_pool import EvaluationModelPool
 from .models import BenchmarkCase, TrialResult, aggregate_trials
 from .report import compare_summaries, render_markdown_report
 
@@ -25,6 +26,9 @@ class EvaluationHarness:
 
     SUPPORTED_CONFIGS = {
         "plain",
+        "strongest",
+        "efficient",
+        "local",
         "cascade",
         "cascade-no-context",
         "cascade-no-cache",
@@ -34,9 +38,15 @@ class EvaluationHarness:
         self,
         repo_root: str | Path,
         adapter: ModelAdapter | None = None,
+        profiles: dict[Capability, ModelProfile] | None = None,
     ):
         self.repo_root = Path(repo_root).resolve()
         self.adapter: ModelAdapter = adapter or CodexAdapter()
+        self.model_pool = (
+            EvaluationModelPool(profiles)
+            if profiles
+            else None
+        )
 
     def available(self) -> bool:
         return self.adapter.available()
@@ -182,6 +192,7 @@ class EvaluationHarness:
         output_dir: Path,
         model: str,
         effort: ReasoningEffort,
+        config: str = "plain",
     ) -> TrialResult:
         started = time.monotonic()
         with tempfile.TemporaryDirectory(prefix="cascade-bench-plain-") as tmp:
@@ -215,9 +226,9 @@ class EvaluationHarness:
                 usage = result.usage
                 trace = self._write_trace(
                     output_dir,
-                    f"{case.case_id}-plain-r{repeat}",
+                    f"{case.case_id}-{config}-r{repeat}",
                     {
-                        "configuration": "plain",
+                        "configuration": config,
                         "case": case.case_id,
                         "repeat": repeat,
                         "source_commit": self._source_commit(),
@@ -234,7 +245,7 @@ class EvaluationHarness:
                 return TrialResult(
                     case_id=case.case_id,
                     category=case.category,
-                    config="plain",
+                    config=config,
                     repeat=repeat,
                     verified_success=verified,
                     failure_kind=failure_kind,
@@ -292,6 +303,14 @@ class EvaluationHarness:
                 runtime.codex = self.adapter
                 runtime.config.local_mode = False
                 runtime.config.cloud_fallback = True
+                if self.model_pool is not None:
+                    runtime.registry = CapabilityRegistry(
+                        profiles=self.model_pool.profiles
+                    )
+                    runtime.router = Router(
+                        runtime.registry,
+                        runtime.budgets,
+                    )
                 if config == "cascade-no-context":
                     runtime.config.enable_context_firewall = False
                 if config == "cascade-no-cache":
@@ -423,16 +442,30 @@ class EvaluationHarness:
         out = Path(output_dir)
         out.mkdir(parents=True, exist_ok=True)
         trials: list[TrialResult] = []
+        direct_configs = {"plain", "strongest", "efficient", "local"}
         for config in configs:
+            direct_model = model
+            if config in {"strongest", "efficient", "local"}:
+                if self.model_pool is None:
+                    raise ValueError(
+                        f"{config} benchmark requires --profiles"
+                    )
+                if config == "strongest":
+                    direct_model = self.model_pool.strongest().model_id
+                elif config == "efficient":
+                    direct_model = self.model_pool.efficient().model_id
+                else:
+                    direct_model = self.model_pool.local().model_id
             for case in cases:
                 for repeat in range(1, repeats + 1):
-                    if config == "plain":
+                    if config in direct_configs:
                         trial = self._plain_trial(
                             case,
                             repeat=repeat,
                             output_dir=out,
-                            model=model,
+                            model=direct_model,
                             effort=effort,
+                            config=config,
                         )
                     else:
                         trial = self._cascade_trial(
@@ -456,6 +489,11 @@ class EvaluationHarness:
             "reasoning_effort": effort.value,
             "repeats": repeats,
             "configs": configs,
+            "model_pool": (
+                self.model_pool.snapshot()
+                if self.model_pool is not None
+                else None
+            ),
             "case_ids": [case.case_id for case in cases],
             "trials": [trial.to_dict() for trial in trials],
             "summary": summary,
