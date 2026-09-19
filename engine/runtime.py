@@ -1021,7 +1021,7 @@ BOUNDED EVIDENCE
 
     def stats(self) -> dict[str, Any]:
         events = self.events.latest(10000)
-        totals = {
+        totals: dict[str, Any] = {
             "head_input_tokens": 0,
             "head_output_tokens": 0,
             "worker_input_tokens": 0,

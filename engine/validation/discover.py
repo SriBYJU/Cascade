@@ -18,9 +18,19 @@ def _package_scripts(root: Path) -> dict[str, str]:
     if not path.exists():
         return {}
     try:
-        return json.loads(path.read_text()).get("scripts", {})
+        data: object = json.loads(path.read_text())
     except (json.JSONDecodeError, OSError):
         return {}
+    if not isinstance(data, dict):
+        return {}
+    scripts = data.get("scripts", {})
+    if not isinstance(scripts, dict):
+        return {}
+    return {
+        key: value
+        for key, value in scripts.items()
+        if isinstance(key, str) and isinstance(value, str)
+    }
 
 
 def discover_validators(root: str | Path) -> list[ValidatorSpec]:

@@ -3,11 +3,13 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 from .benchmarks import BenchmarkRunner
 from .config import CascadeConfig
 from .context.repo_map import build_repo_map
 from .doctor import doctor
+from .scheduler.dag import TaskNode
 from .scheduler.executor import ParallelTaskSpec, compile_safe_dag, execute_dag
 from .runtime import CascadeRuntime
 from .validation.discover import discover_validators
@@ -279,7 +281,7 @@ def main(argv: list[str] | None = None) -> int:
             _print({"levels": dag_view})
             return 0
 
-        def run_node(node):
+        def run_node(node: TaskNode) -> dict[str, Any]:
             return runtime.run(
                 str(node.metadata["task"]),
                 write_paths=list(node.write_patterns) or None,

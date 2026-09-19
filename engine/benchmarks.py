@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json,time
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from .router.capability_registry import CapabilityRegistry
 from .router.classifier import classify_step
 from .router.policy import minimum_capability
@@ -10,7 +10,7 @@ from .schemas import Capability,StepType
 
 class BenchmarkRunner:
     def __init__(self,repo_root:str|Path): self.repo_root=Path(repo_root).resolve(); self.registry=CapabilityRegistry()
-    def _fixtures(self)->list[dict[str,Any]]: return json.loads((self.repo_root/"benchmarks"/"fixtures"/"micro_tasks.json").read_text())
+    def _fixtures(self)->list[dict[str,Any]]: return cast(list[dict[str,Any]], json.loads((self.repo_root/"benchmarks"/"fixtures"/"micro_tasks.json").read_text()))
     def run_micro(self)->dict[str,Any]:
         started=time.time(); results=[]; failures=0; order=[c.value for c in Capability]
         for item in self._fixtures():

@@ -7,7 +7,7 @@ _DEFAULT_COST_WEIGHT={Capability.NO_MODEL:0.0,Capability.QUICK:0.20,Capability.E
 class CapabilityRegistry:
     def __init__(self,overrides:dict[Capability,str]|None=None): self.overrides=overrides or {}; self._profiles=self._build_profiles()
     def _build_profiles(self)->dict[Capability,ModelProfile]:
-        profiles={}
+        profiles: dict[Capability, ModelProfile] = {}
         for cap in _CAPABILITY_ORDER:
             if cap==Capability.NO_MODEL:
                 profiles[cap]=ModelProfile(model_id="deterministic",capability=cap,reasoning_efforts=[ReasoningEffort.MINIMAL],local=True,cost_weight=0.0001,latency_weight=0.1); continue

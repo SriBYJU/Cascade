@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from .db import StateDB
 
 
@@ -12,7 +14,7 @@ class CheckpointStore:
     def __init__(self, db: StateDB):
         self.db = db
 
-    def save(self, run_id: str, task_id: str, state: str, payload: dict | None = None) -> None:
+    def save(self, run_id: str, task_id: str, state: str, payload: dict[str, Any] | None = None) -> None:
         if state not in self.VALID_STATES:
             raise ValueError(f"invalid checkpoint state: {state}")
         self.db.execute(
@@ -23,7 +25,7 @@ class CheckpointStore:
             (run_id, task_id, state, self.db.dumps(payload or {})),
         )
 
-    def get(self, run_id: str, task_id: str) -> dict | None:
+    def get(self, run_id: str, task_id: str) -> dict[str, Any] | None:
         rows = self.db.query(
             "SELECT * FROM checkpoints WHERE run_id=? AND task_id=?", (run_id, task_id)
         )
@@ -32,7 +34,7 @@ class CheckpointStore:
         row = rows[0]
         return {"run_id": run_id, "task_id": task_id, "state": row["state"], "payload": self.db.loads(row["payload_json"])}
 
-    def resumable(self) -> list[dict]:
+    def resumable(self) -> list[dict[str, Any]]:
         rows = self.db.query(
             "SELECT * FROM checkpoints WHERE state NOT IN ('MERGED','CANCELLED') ORDER BY updated_at DESC"
         )

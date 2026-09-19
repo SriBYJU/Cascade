@@ -36,7 +36,7 @@ def overlap(left: WriteSet, right: WriteSet) -> bool:
 
 
 def conflict_graph(write_sets: list[WriteSet]) -> dict[str, set[str]]:
-    graph = {w.task_id: set() for w in write_sets}
+    graph: dict[str, set[str]] = {w.task_id: set() for w in write_sets}
     for i, left in enumerate(write_sets):
         for right in write_sets[i + 1 :]:
             if overlap(left, right):

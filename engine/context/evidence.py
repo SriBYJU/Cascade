@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from ..schemas import EvidencePacket
 
 
@@ -9,7 +11,7 @@ REQUIRED_PACKET_FIELDS = {
 }
 
 
-def parse_evidence_packet(data: dict) -> EvidencePacket:
+def parse_evidence_packet(data: dict[str, Any]) -> EvidencePacket:
     missing = REQUIRED_PACKET_FIELDS - data.keys()
     if missing:
         raise ValueError(f"malformed evidence packet; missing fields: {sorted(missing)}")

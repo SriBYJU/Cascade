@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from .db import StateDB
 from ..schemas import Event
 
@@ -34,7 +36,7 @@ class EventStore:
         rows = self.db.query("SELECT * FROM events ORDER BY id DESC LIMIT ?", (limit,))
         return [self._from_row(row) for row in reversed(rows)]
 
-    def _from_row(self, row: dict) -> Event:
+    def _from_row(self, row: dict[str, Any]) -> Event:
         return Event(
             run_id=row["run_id"],
             task_id=row["task_id"],

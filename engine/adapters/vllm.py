@@ -7,7 +7,7 @@ class VLLMAdapter:
     def __init__(self,base_url:str="http://127.0.0.1:8000/v1"): self.base_url=base_url.rstrip("/")
     def available(self)->bool:
         try:
-            with urllib.request.urlopen(self.base_url+"/models",timeout=1.0) as r: return r.status==200
+            with urllib.request.urlopen(self.base_url+"/models",timeout=1.0) as r: return int(r.status)==200
         except (OSError,urllib.error.URLError): return False
     def models(self)->list[str]:
         if not self.available(): return []
