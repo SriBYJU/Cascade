@@ -486,7 +486,7 @@ When a live benchmark contains both `plain` and `cascade`, Cascade automatically
 optimizer savings .cascade/benchmarks/live/report.json
 ```
 
-The summary reports token savings, weighted model-use savings, wall-time savings, verified-success change, cache delta, matched comparisons, and the exact source commit. Cascade only marks a token-savings claim as eligible when the measured candidate uses fewer tokens **and** has equal-or-better verified success than the selected baseline.
+The summary reports token savings, weighted model-use savings, head-model savings, context-transfer savings, wall-time savings, VWET, verified-success change, cache delta, matched comparisons, and the exact source commit. Cascade can show measured deltas from smaller experiments, but it only marks a **public headline claim** as release-grade when the report has at least 20 cases × 3 repeats, matched baseline/candidate trials, exact source-commit/environment/policy metadata, fewer tokens, and equal-or-better verified success.
 
 
 ## Release gate
