@@ -8,9 +8,9 @@
       "calc.py"
     ],
     "files": {
-      "pyproject.toml": "[project]\\nname = \"cascade-bench-fixture\"\\nversion = \"0.0.0\"\\n[tool.pytest.ini_options]\\ntestpaths = [\"tests\"]\\n",
-      "calc.py": "def caculate_total(values):\\n    return sum(values)\\n\\n\\ndef invoice(values):\\n    return caculate_total(values)\\n",
-      "tests/test_calc.py": "from calc import calculate_total, invoice\\n\\n\\ndef test_total():\\n    assert calculate_total([1, 2, 3]) == 6\\n    assert invoice([4, 5]) == 9\\n"
+      "pyproject.toml": "[project]\nname = \"cascade-bench-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "calc.py": "def caculate_total(values):\n    return sum(values)\n\n\ndef invoice(values):\n    return caculate_total(values)\n",
+      "tests/test_calc.py": "from calc import calculate_total, invoice\n\n\ndef test_total():\n    assert calculate_total([1, 2, 3]) == 6\n    assert invoice([4, 5]) == 9\n"
     },
     "acceptance": [
       [
@@ -30,9 +30,9 @@
       "pagination.py"
     ],
     "files": {
-      "pyproject.toml": "[project]\\nname = \"cascade-bench-fixture\"\\nversion = \"0.0.0\"\\n[tool.pytest.ini_options]\\ntestpaths = [\"tests\"]\\n",
-      "pagination.py": "def paginate(items, page, size):\\n    start = page * size\\n    return items[start:start + size]\\n",
-      "tests/test_pagination.py": "from pagination import paginate\\n\\n\\ndef test_pages_are_one_indexed():\\n    items = list(range(10))\\n    assert paginate(items, 1, 3) == [0, 1, 2]\\n    assert paginate(items, 2, 3) == [3, 4, 5]\\n"
+      "pyproject.toml": "[project]\nname = \"cascade-bench-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "pagination.py": "def paginate(items, page, size):\n    start = page * size\n    return items[start:start + size]\n",
+      "tests/test_pagination.py": "from pagination import paginate\n\n\ndef test_pages_are_one_indexed():\n    items = list(range(10))\n    assert paginate(items, 1, 3) == [0, 1, 2]\n    assert paginate(items, 2, 3) == [3, 4, 5]\n"
     },
     "acceptance": [
       [
@@ -52,9 +52,9 @@
       "permissions.py"
     ],
     "files": {
-      "pyproject.toml": "[project]\\nname = \"cascade-bench-fixture\"\\nversion = \"0.0.0\"\\n[tool.pytest.ini_options]\\ntestpaths = [\"tests\"]\\n",
-      "permissions.py": "def can_delete(user_id, owner_id, role):\\n    return role == \"admin\" or user_id != owner_id\\n",
-      "tests/test_permissions.py": "from permissions import can_delete\\n\\n\\ndef test_delete_policy():\\n    assert can_delete(\"u1\", \"u1\", \"member\") is True\\n    assert can_delete(\"u2\", \"u1\", \"member\") is False\\n    assert can_delete(\"u2\", \"u1\", \"admin\") is True\\n"
+      "pyproject.toml": "[project]\nname = \"cascade-bench-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "permissions.py": "def can_delete(user_id, owner_id, role):\n    return role == \"admin\" or user_id != owner_id\n",
+      "tests/test_permissions.py": "from permissions import can_delete\n\n\ndef test_delete_policy():\n    assert can_delete(\"u1\", \"u1\", \"member\") is True\n    assert can_delete(\"u2\", \"u1\", \"member\") is False\n    assert can_delete(\"u2\", \"u1\", \"admin\") is True\n"
     },
     "acceptance": [
       [
@@ -75,10 +75,408 @@
       "service.py"
     ],
     "files": {
-      "pyproject.toml": "[project]\\nname = \"cascade-bench-fixture\"\\nversion = \"0.0.0\"\\n[tool.pytest.ini_options]\\ntestpaths = [\"tests\"]\\n",
-      "normalize.py": "def normalize_name(name):\\n    return name.strip().lower()\\n",
-      "service.py": "from normalize import normalize_name\\n\\n\\ndef greet(name):\\n    cleaned = name.strip()\\n    return f\"Hello, {cleaned}!\"\\n",
-      "tests/test_service.py": "from service import greet\\n\\n\\ndef test_greeting_uses_shared_normalization():\\n    assert greet(\"  ada LOVELACE \") == \"Hello, Ada Lovelace!\"\\n"
+      "pyproject.toml": "[project]\nname = \"cascade-bench-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "normalize.py": "def normalize_name(name):\n    return name.strip().lower()\n",
+      "service.py": "from normalize import normalize_name\n\n\ndef greet(name):\n    cleaned = name.strip()\n    return f\"Hello, {cleaned}!\"\n",
+      "tests/test_service.py": "from service import greet\n\n\ndef test_greeting_uses_shared_normalization():\n    assert greet(\"  ada LOVELACE \") == \"Hello, Ada Lovelace!\"\n"
+    },
+    "acceptance": [
+      [
+        "python",
+        "-m",
+        "pytest",
+        "-q"
+      ]
+    ]
+  },
+  {
+    "id": "live-search-retry",
+    "category": "search",
+    "task": "Locate the file that defines RETRY_BACKOFF_SECONDS and report its exact repository path. Do not edit anything.",
+    "risk": "low",
+    "write": [],
+    "files": {
+      "config/retry.py": "RETRY_BACKOFF_SECONDS = 7\n",
+      "service.py": "def run():\n    return 'ok'\n",
+      "README.md": "Retry behavior is configured in the codebase.\n"
+    },
+    "answer_contains": [
+      "config/retry.py"
+    ]
+  },
+  {
+    "id": "live-test-repair",
+    "category": "test-repair",
+    "task": "Repair the implementation so the existing tests pass. Do not weaken or delete tests.",
+    "risk": "low",
+    "write": [
+      "math_utils.py"
+    ],
+    "files": {
+      "pyproject.toml": "[project]\nname = \"cascade-bench-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "math_utils.py": "def clamp(value, low, high):\n    return min(low, max(high, value))\n",
+      "tests/test_math_utils.py": "from math_utils import clamp\n\n\ndef test_clamp():\n    assert clamp(5, 0, 10) == 5\n    assert clamp(-2, 0, 10) == 0\n    assert clamp(20, 0, 10) == 10\n"
+    },
+    "acceptance": [
+      [
+        "python",
+        "-m",
+        "pytest",
+        "-q"
+      ]
+    ]
+  },
+  {
+    "id": "live-feature-slugify",
+    "category": "feature",
+    "task": "Implement slugify in text_utils.py. It should trim whitespace, lowercase, replace runs of non-alphanumeric characters with a single hyphen, and strip edge hyphens.",
+    "risk": "low",
+    "write": [
+      "text_utils.py"
+    ],
+    "files": {
+      "pyproject.toml": "[project]\nname = \"cascade-bench-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "text_utils.py": "# slugify is intentionally missing\n",
+      "tests/test_text_utils.py": "from text_utils import slugify\n\n\ndef test_slugify():\n    assert slugify(\"  Hello, World!  \") == \"hello-world\"\n    assert slugify(\"A__B   C\") == \"a-b-c\"\n    assert slugify(\"---\") == \"\"\n"
+    },
+    "acceptance": [
+      [
+        "python",
+        "-m",
+        "pytest",
+        "-q"
+      ]
+    ]
+  },
+  {
+    "id": "live-migration-profile",
+    "category": "migration",
+    "task": "Update migrate_profile in migration.py to migrate legacy {'full_name': ...} records into {'name': ...} while preserving every other field and never mutating the input mapping.",
+    "risk": "high",
+    "write": [
+      "migration.py"
+    ],
+    "files": {
+      "pyproject.toml": "[project]\nname = \"cascade-bench-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "migration.py": "def migrate_profile(record):\n    record[\"name\"] = record.pop(\"full_name\")\n    return record\n",
+      "tests/test_migration.py": "from migration import migrate_profile\n\n\ndef test_migration_preserves_input_and_fields():\n    source = {\"full_name\": \"Ada\", \"age\": 36}\n    out = migrate_profile(source)\n    assert out == {\"name\": \"Ada\", \"age\": 36}\n    assert source == {\"full_name\": \"Ada\", \"age\": 36}\n"
+    },
+    "acceptance": [
+      [
+        "python",
+        "-m",
+        "pytest",
+        "-q"
+      ]
+    ]
+  },
+  {
+    "id": "live-frontend-render",
+    "category": "frontend",
+    "task": "Fix render_button so disabled buttons include both disabled and aria-disabled=\"true\", while enabled buttons include neither disabled marker.",
+    "risk": "low",
+    "write": [
+      "ui.py"
+    ],
+    "files": {
+      "pyproject.toml": "[project]\nname = \"cascade-bench-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "ui.py": "def render_button(label, disabled=False):\n    attrs = ' disabled' if not disabled else ''\n    return f'<button{attrs}>{label}</button>'\n",
+      "tests/test_ui.py": "from ui import render_button\n\n\ndef test_button_accessibility():\n    disabled = render_button(\"Save\", True)\n    assert \" disabled\" in disabled\n    assert 'aria-disabled=\"true\"' in disabled\n    enabled = render_button(\"Save\", False)\n    assert \" disabled\" not in enabled\n    assert \"aria-disabled\" not in enabled\n"
+    },
+    "acceptance": [
+      [
+        "python",
+        "-m",
+        "pytest",
+        "-q"
+      ]
+    ]
+  },
+  {
+    "id": "live-docs-version",
+    "category": "docs-lookup",
+    "task": "Read the repository documentation and report the exact minimum supported protocol version. Do not edit anything.",
+    "risk": "low",
+    "write": [],
+    "files": {
+      "docs/protocol.md": "# Protocol\n\nClients must support protocol version v2.4.1 or newer.\n",
+      "README.md": "See docs/protocol.md for protocol requirements.\n"
+    },
+    "answer_contains": [
+      "v2.4.1"
+    ]
+  },
+  {
+    "id": "live-architecture-cycle",
+    "category": "architecture",
+    "task": "Identify the exact two Python modules that form the direct import cycle. Return both module paths and do not edit anything.",
+    "risk": "medium",
+    "write": [],
+    "files": {
+      "pkg/a.py": "from pkg.b import helper_b\n\ndef helper_a():\n    return helper_b()\n",
+      "pkg/b.py": "from pkg.a import helper_a\n\ndef helper_b():\n    return 2\n",
+      "pkg/c.py": "VALUE = 3\n"
+    },
+    "answer_contains": [
+      "pkg/a.py",
+      "pkg/b.py"
+    ]
+  },
+  {
+    "id": "live-repo-explore",
+    "category": "repo-explore",
+    "task": "Find every repository file that defines a PaymentProvider class. Return the exact paths and do not edit anything.",
+    "risk": "low",
+    "write": [],
+    "files": {
+      "payments/stripe.py": "class PaymentProvider:\n    pass\n",
+      "payments/mock.py": "class PaymentProvider:\n    pass\n",
+      "payments/utils.py": "def cents(x):\n    return x * 100\n"
+    },
+    "answer_contains": [
+      "payments/stripe.py",
+      "payments/mock.py"
+    ]
+  },
+  {
+    "id": "live-refactor-dedupe",
+    "category": "refactor",
+    "task": "Refactor formatter.py and report.py to share one normalize_whitespace helper from common.py. Preserve existing outputs and remove duplicated normalization logic.",
+    "risk": "medium",
+    "write": [
+      "common.py",
+      "formatter.py",
+      "report.py"
+    ],
+    "files": {
+      "pyproject.toml": "[project]\nname = \"cascade-bench-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "common.py": "# shared helpers\n",
+      "formatter.py": "def format_name(value):\n    return ' '.join(value.split())\n",
+      "report.py": "def clean_title(value):\n    return ' '.join(value.split())\n",
+      "tests/test_refactor.py": "from formatter import format_name\nfrom report import clean_title\n\n\ndef test_shared_behavior():\n    assert format_name(\" Ada   Lovelace \") == \"Ada Lovelace\"\n    assert clean_title(\" Q1   Report \") == \"Q1 Report\"\n"
+    },
+    "acceptance": [
+      [
+        "python",
+        "-m",
+        "pytest",
+        "-q"
+      ]
+    ]
+  },
+  {
+    "id": "live-ambiguous-default",
+    "category": "ambiguity",
+    "task": "Fix choose_region. The repository convention in config.py is authoritative: when region is omitted, use DEFAULT_REGION. Keep explicit region values unchanged.",
+    "risk": "medium",
+    "write": [
+      "selector.py"
+    ],
+    "files": {
+      "pyproject.toml": "[project]\nname = \"cascade-bench-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "config.py": "DEFAULT_REGION = \"us-east-1\"\n",
+      "selector.py": "def choose_region(region=None):\n    return region or \"us-west-2\"\n",
+      "tests/test_selector.py": "from selector import choose_region\n\n\ndef test_region_default_and_override():\n    assert choose_region() == \"us-east-1\"\n    assert choose_region(\"eu-west-1\") == \"eu-west-1\"\n"
+    },
+    "acceptance": [
+      [
+        "python",
+        "-m",
+        "pytest",
+        "-q"
+      ]
+    ]
+  },
+  {
+    "id": "live-config-parser",
+    "category": "config",
+    "task": "Fix parse_bool so it accepts booleans and case-insensitive strings true/false, and raises ValueError for unsupported values.",
+    "risk": "low",
+    "write": [
+      "config_utils.py"
+    ],
+    "files": {
+      "pyproject.toml": "[project]\nname = \"cascade-bench-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "config_utils.py": "def parse_bool(value):\n    return bool(value)\n",
+      "tests/test_config_utils.py": "import pytest\nfrom config_utils import parse_bool\n\n\ndef test_parse_bool():\n    assert parse_bool(True) is True\n    assert parse_bool(False) is False\n    assert parse_bool(\"TRUE\") is True\n    assert parse_bool(\"false\") is False\n    with pytest.raises(ValueError):\n        parse_bool(\"yes\")\n"
+    },
+    "acceptance": [
+      [
+        "python",
+        "-m",
+        "pytest",
+        "-q"
+      ]
+    ]
+  },
+  {
+    "id": "live-concurrency-counter",
+    "category": "concurrency",
+    "task": "Fix Counter in counter.py so concurrent increment calls cannot lose updates. Keep the public increment and value methods.",
+    "risk": "medium",
+    "write": [
+      "counter.py"
+    ],
+    "files": {
+      "pyproject.toml": "[project]\nname = \"cascade-bench-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "counter.py": "class Counter:\n    def __init__(self):\n        self._value = 0\n\n    def increment(self):\n        current = self._value\n        self._value = current + 1\n\n    def value(self):\n        return self._value\n",
+      "tests/test_counter.py": "from concurrent.futures import ThreadPoolExecutor\nfrom counter import Counter\n\n\ndef test_counter_thread_safe():\n    c = Counter()\n    with ThreadPoolExecutor(max_workers=8) as pool:\n        list(pool.map(lambda _: c.increment(), range(4000)))\n    assert c.value() == 4000\n"
+    },
+    "acceptance": [
+      [
+        "python",
+        "-m",
+        "pytest",
+        "-q"
+      ]
+    ]
+  },
+  {
+    "id": "live-serialization",
+    "category": "serialization",
+    "task": "Fix encode_user so datetime values are serialized as ISO-8601 strings and the input mapping is not mutated.",
+    "risk": "low",
+    "write": [
+      "codec.py"
+    ],
+    "files": {
+      "pyproject.toml": "[project]\nname = \"cascade-bench-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "codec.py": "import json\n\ndef encode_user(user):\n    return json.dumps(user)\n",
+      "tests/test_codec.py": "from datetime import datetime, timezone\nimport json\nfrom codec import encode_user\n\n\ndef test_encode_user_datetime():\n    source = {\"name\": \"Ada\", \"created\": datetime(2026, 1, 2, tzinfo=timezone.utc)}\n    raw = encode_user(source)\n    data = json.loads(raw)\n    assert data[\"created\"] == \"2026-01-02T00:00:00+00:00\"\n    assert source[\"created\"].year == 2026\n"
+    },
+    "acceptance": [
+      [
+        "python",
+        "-m",
+        "pytest",
+        "-q"
+      ]
+    ]
+  },
+  {
+    "id": "live-cache-invalidation",
+    "category": "cache",
+    "task": "Fix Memo so set(key, value) overwrites stale cached values and get returns the most recently set value.",
+    "risk": "low",
+    "write": [
+      "memo.py"
+    ],
+    "files": {
+      "pyproject.toml": "[project]\nname = \"cascade-bench-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "memo.py": "class Memo:\n    def __init__(self):\n        self.data = {}\n\n    def set(self, key, value):\n        self.data.setdefault(key, value)\n\n    def get(self, key):\n        return self.data.get(key)\n",
+      "tests/test_memo.py": "from memo import Memo\n\n\ndef test_overwrite():\n    memo = Memo()\n    memo.set(\"a\", 1)\n    memo.set(\"a\", 2)\n    assert memo.get(\"a\") == 2\n"
+    },
+    "acceptance": [
+      [
+        "python",
+        "-m",
+        "pytest",
+        "-q"
+      ]
+    ]
+  },
+  {
+    "id": "live-integration-tax",
+    "category": "integration",
+    "task": "Fix the order total pipeline so order_total applies the discount from discounts.py and then tax from tax.py. Preserve both helpers as separate modules.",
+    "risk": "medium",
+    "write": [
+      "orders.py"
+    ],
+    "files": {
+      "pyproject.toml": "[project]\nname = \"cascade-bench-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "discounts.py": "def apply_discount(amount):\n    return amount * 0.9\n",
+      "tax.py": "def apply_tax(amount):\n    return amount * 1.1\n",
+      "orders.py": "from discounts import apply_discount\nfrom tax import apply_tax\n\n\ndef order_total(amount):\n    return apply_discount(apply_tax(amount))\n",
+      "tests/test_orders.py": "from orders import order_total\n\n\ndef test_discount_then_tax():\n    assert round(order_total(100), 2) == 99.0\n"
+    },
+    "acceptance": [
+      [
+        "python",
+        "-m",
+        "pytest",
+        "-q"
+      ]
+    ]
+  },
+  {
+    "id": "live-error-handling",
+    "category": "error-handling",
+    "task": "Fix load_json so invalid JSON raises ValueError with the prefix 'invalid json:' while valid JSON still returns parsed data.",
+    "risk": "low",
+    "write": [
+      "loader.py"
+    ],
+    "files": {
+      "pyproject.toml": "[project]\nname = \"cascade-bench-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "loader.py": "import json\n\ndef load_json(text):\n    return json.loads(text)\n",
+      "tests/test_loader.py": "import pytest\nfrom loader import load_json\n\n\ndef test_valid():\n    assert load_json('{\"a\": 1}') == {\"a\": 1}\n\n\ndef test_invalid_message():\n    with pytest.raises(ValueError, match=r'^invalid json:'):\n        load_json('{bad')\n"
+    },
+    "acceptance": [
+      [
+        "python",
+        "-m",
+        "pytest",
+        "-q"
+      ]
+    ]
+  },
+  {
+    "id": "live-api-validation",
+    "category": "api-validation",
+    "task": "Fix validate_limit so integer limits from 1 through 100 are accepted, booleans are rejected, and out-of-range values raise ValueError.",
+    "risk": "low",
+    "write": [
+      "api.py"
+    ],
+    "files": {
+      "pyproject.toml": "[project]\nname = \"cascade-bench-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "api.py": "def validate_limit(value):\n    if isinstance(value, int):\n        return value\n    raise ValueError(\"bad limit\")\n",
+      "tests/test_api.py": "import pytest\nfrom api import validate_limit\n\n\ndef test_limits():\n    assert validate_limit(1) == 1\n    assert validate_limit(100) == 100\n    for bad in (0, 101, True, False):\n        with pytest.raises(ValueError):\n            validate_limit(bad)\n"
+    },
+    "acceptance": [
+      [
+        "python",
+        "-m",
+        "pytest",
+        "-q"
+      ]
+    ]
+  },
+  {
+    "id": "live-cli-flags",
+    "category": "cli",
+    "task": "Fix parse_args so --verbose sets verbose=True and the positional name is returned unchanged.",
+    "risk": "low",
+    "write": [
+      "cli_app.py"
+    ],
+    "files": {
+      "pyproject.toml": "[project]\nname = \"cascade-bench-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "cli_app.py": "import argparse\n\ndef parse_args(argv):\n    p = argparse.ArgumentParser()\n    p.add_argument('name')\n    p.add_argument('--verbose', action='store_false')\n    return p.parse_args(argv)\n",
+      "tests/test_cli_app.py": "from cli_app import parse_args\n\n\ndef test_flags():\n    args = parse_args([\"Ada\", \"--verbose\"])\n    assert args.name == \"Ada\"\n    assert args.verbose is True\n"
+    },
+    "acceptance": [
+      [
+        "python",
+        "-m",
+        "pytest",
+        "-q"
+      ]
+    ]
+  },
+  {
+    "id": "live-data-structure",
+    "category": "data-structure",
+    "task": "Fix LRUCache so get marks an entry as most recently used and set evicts the least recently used key when capacity is exceeded.",
+    "risk": "medium",
+    "write": [
+      "lru.py"
+    ],
+    "files": {
+      "pyproject.toml": "[project]\nname = \"cascade-bench-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "lru.py": "class LRUCache:\n    def __init__(self, capacity):\n        self.capacity = capacity\n        self.data = {}\n\n    def get(self, key):\n        return self.data.get(key)\n\n    def set(self, key, value):\n        self.data[key] = value\n        if len(self.data) > self.capacity:\n            self.data.pop(next(iter(self.data)))\n",
+      "tests/test_lru.py": "from lru import LRUCache\n\n\ndef test_lru_recency():\n    c = LRUCache(2)\n    c.set(\"a\", 1)\n    c.set(\"b\", 2)\n    assert c.get(\"a\") == 1\n    c.set(\"c\", 3)\n    assert c.get(\"b\") is None\n    assert c.get(\"a\") == 1\n    assert c.get(\"c\") == 3\n"
     },
     "acceptance": [
       [

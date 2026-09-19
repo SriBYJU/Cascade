@@ -72,6 +72,9 @@ class EvaluationHarness:
     def _accept(
         root: Path,
         commands: list[list[str]],
+        *,
+        final_message: str = "",
+        answer_contains: list[str] | None = None,
     ) -> tuple[bool, list[dict[str, Any]]]:
         checks: list[dict[str, Any]] = []
         passed = True
@@ -87,6 +90,17 @@ class EvaluationHarness:
             checks.append(
                 {
                     **result.model_dump(mode="json"),
+                    "passed": ok,
+                }
+            )
+        lowered = final_message.lower()
+        for expected in answer_contains or []:
+            ok = expected.lower() in lowered
+            passed = passed and ok
+            checks.append(
+                {
+                    "kind": "answer_contains",
+                    "expected": expected,
                     "passed": ok,
                 }
             )
@@ -124,7 +138,12 @@ class EvaluationHarness:
                     model=model,
                     effort=effort,
                 )
-                accepted, checks = self._accept(root, case.acceptance)
+                accepted, checks = self._accept(
+                    root,
+                    case.acceptance,
+                    final_message=result.final_message,
+                    answer_contains=case.answer_contains,
+                )
                 verified = result.ok and accepted
                 failure_kind: str | None = None
                 if not result.ok:
@@ -231,8 +250,18 @@ class EvaluationHarness:
                     apply=False,
                 )
                 target = Path(str(result.get("worktree", root)))
-                accepted, checks = self._accept(target, case.acceptance)
-                verified = result.get("status") == "verified" and accepted
+                final_message = str(result.get("worker_message", ""))
+                accepted, checks = self._accept(
+                    target,
+                    case.acceptance,
+                    final_message=final_message,
+                    answer_contains=case.answer_contains,
+                )
+                verified = (
+                    result.get("status")
+                    in {"verified", "completed-read-only"}
+                    and accepted
+                )
                 failure_kind: str | None = None
                 if result.get("status") not in {
                     "verified",

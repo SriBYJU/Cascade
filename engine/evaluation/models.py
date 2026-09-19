@@ -17,6 +17,7 @@ class BenchmarkCase:
     files: dict[str, str]
     write_paths: list[str]
     acceptance: list[list[str]]
+    answer_contains: list[str] = field(default_factory=list)
     risk: str = "medium"
 
     @classmethod
@@ -24,12 +25,15 @@ class BenchmarkCase:
         files_raw = data.get("files", {})
         writes_raw = data.get("write", [])
         acceptance_raw = data.get("acceptance", [])
+        answer_raw = data.get("answer_contains", [])
         if not isinstance(files_raw, dict):
             raise ValueError("benchmark case files must be an object")
         if not isinstance(writes_raw, list):
             raise ValueError("benchmark case write must be a list")
         if not isinstance(acceptance_raw, list):
             raise ValueError("benchmark case acceptance must be a list")
+        if not isinstance(answer_raw, list):
+            raise ValueError("benchmark case answer_contains must be a list")
         files = {
             str(path): str(content)
             for path, content in files_raw.items()
@@ -40,8 +44,11 @@ class BenchmarkCase:
             if not isinstance(command, list) or not command:
                 raise ValueError("each acceptance command must be a non-empty argv list")
             acceptance.append([str(item) for item in command])
-        if not acceptance:
-            raise ValueError("live benchmark cases require deterministic acceptance")
+        answer_contains = [str(item) for item in answer_raw]
+        if not acceptance and not answer_contains:
+            raise ValueError(
+                "live benchmark cases require command or answer acceptance"
+            )
         return cls(
             case_id=str(data["id"]),
             category=str(data["category"]),
@@ -49,6 +56,7 @@ class BenchmarkCase:
             files=files,
             write_paths=write_paths,
             acceptance=acceptance,
+            answer_contains=answer_contains,
             risk=str(data.get("risk", "medium")),
         )
 

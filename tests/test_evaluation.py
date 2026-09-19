@@ -39,8 +39,26 @@ class FakeEditingAdapter:
 def test_live_manifest_loads():
     root = Path(__file__).parents[1]
     cases = load_cases(root / "benchmarks" / "fixtures" / "live_tasks.json")
-    assert len(cases) >= 4
-    assert all(case.acceptance for case in cases)
+    assert len(cases) >= 20
+    assert all(case.acceptance or case.answer_contains for case in cases)
+    categories = {case.category for case in cases}
+    required = {
+        "trivial-edit",
+        "search",
+        "single-file-bug",
+        "multi-file-bug",
+        "feature",
+        "test-repair",
+        "migration",
+        "frontend",
+        "docs-lookup",
+        "architecture",
+        "security",
+        "repo-explore",
+        "refactor",
+        "ambiguity",
+    }
+    assert required <= categories
 
 
 def test_plain_harness_records_measured_trial(tmp_path: Path):
@@ -75,3 +93,25 @@ def test_plain_harness_records_measured_trial(tmp_path: Path):
 
 def test_aggregate_trials_empty():
     assert aggregate_trials([]) == {}
+
+
+
+def test_answer_acceptance_supports_read_only_tasks(tmp_path: Path):
+    case = BenchmarkCase(
+        case_id="search",
+        category="search",
+        task="find config",
+        files={"config.py": "VALUE = 1\n"},
+        write_paths=[],
+        acceptance=[],
+        answer_contains=["config.py"],
+    )
+    harness = EvaluationHarness(tmp_path, adapter=FakeEditingAdapter())
+    passed, checks = harness._accept(
+        tmp_path,
+        [],
+        final_message="The value is in config.py.",
+        answer_contains=case.answer_contains,
+    )
+    assert passed is True
+    assert checks[0]["kind"] == "answer_contains"

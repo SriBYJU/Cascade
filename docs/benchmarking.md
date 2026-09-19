@@ -54,7 +54,7 @@ optimizer benchmark --suite live \
 
 Each trial starts from the same generated git fixture, runs deterministic acceptance commands, records failed runs, and writes a raw JSON trajectory under `raw/`. If Codex is unavailable, the report says `environment-unavailable`; Cascade does not fabricate benchmark numbers.
 
-The first live manifest covers trivial edit, single-file bug, security/authorization, and multi-file dependency work. It is an initial A/B suite, not yet the full Phase 8 scientific benchmark.
+The live manifest now contains 22 deterministic cases across trivial edits, search, single- and multi-file bugs, features, test repair, migration, frontend behavior, documentation lookup, architecture exploration, security, repository exploration, refactoring, ambiguity, configuration, concurrency, serialization, cache behavior, integration, error handling, API validation, CLI behavior, and data structures. Read-only cases use explicit answer-substring acceptance while write cases use deterministic commands.
 
 
 ## Implemented ablations
