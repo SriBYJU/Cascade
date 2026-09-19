@@ -211,7 +211,7 @@ class ParallelLiveHarness:
             runtime = CascadeRuntime(root)
             runtime.codex = self.adapter
             if model != "auto":
-                overrides = {
+                overrides: dict[Capability, str] = {
                     capability: model
                     for capability in Capability
                     if capability != Capability.NO_MODEL

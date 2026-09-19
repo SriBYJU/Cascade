@@ -442,8 +442,8 @@ def main(argv: list[str] | None = None) -> int:
                 else repo / "benchmarks/fixtures/parallel_live.json"
             )
             scenarios = load_parallel_scenarios(manifest)
-            harness = ParallelLiveHarness(repo)
-            result = harness.run(
+            parallel_harness = ParallelLiveHarness(repo)
+            result = parallel_harness.run(
                 scenarios,
                 repeats=args.repeats,
                 model=args.model,
@@ -475,8 +475,8 @@ def main(argv: list[str] | None = None) -> int:
             if output_arg.suffix == ""
             else output_arg.parent / output_arg.stem
         )
-        harness = EvaluationHarness(repo)
-        report = harness.run(
+        live_harness = EvaluationHarness(repo)
+        report = live_harness.run(
             cases,
             configs=configs,
             repeats=args.repeats,
