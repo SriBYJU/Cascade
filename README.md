@@ -4,7 +4,7 @@
 
 Cascade is a local-first adaptive orchestration layer for Codex. It routes each **trajectory step** to the least-expensive capable model—or to a deterministic tool—while minimizing context movement, isolating concurrent writes, verifying outcomes, and recording auditable evidence.
 
-> Status: **developer preview / active implementation**. The architecture is intentionally conservative: transparent rules first, measured claims only, no required backend, no telemetry by default.
+> Status: **engineering release candidate**. The core engine, safety gates, plugin packaging, cross-platform CI, benchmark harness, and release gate are implemented. Public performance claims still require the final repeated real-model benchmark; Cascade does not invent savings numbers.
 
 ## Why Cascade exists
 
@@ -35,7 +35,7 @@ Cascade treats models as heterogeneous compute, context as scarce bandwidth, det
 - Bounded DAG/concurrency and token/context budget reservation.
 - Codex `exec --json` adapter plus optional Ollama/vLLM adapter boundaries.
 - Local `doctor`, `plan`, `run`, `resume`, `shadow`, `status`, `trace`, `why`, `stats`, `models`, `cache`, `benchmark`, and `cleanup` commands.
-- 20-task deterministic micro-routing benchmark and acceptance-oriented automated tests.
+- 23-task live benchmark suite, deterministic micro-routing benchmark, controlled baselines/ablations, and acceptance-oriented automated tests.
 
 ## 60-second local quickstart
 
@@ -46,17 +46,213 @@ python -m venv .venv
 source .venv/bin/activate      # Windows: .venv\\Scripts\\activate
 pip install -e ".[dev]"
 optimizer doctor
+```
+
+Then point Cascade at your own repository:
+
+```bash
+optimizer project-install --target /path/to/your/repo
+cd /path/to/your/repo
 optimizer plan "Fix the API validation bug" --write "src/api/**"
+optimizer run "Fix the API validation bug" --write "src/api/**"
+optimizer trace
+optimizer stats
+```
+
+Add `--apply` to `optimizer run` only when you want a verified writer result integrated into a clean current checkout.
+
+## Step-by-step tutorial: use Cascade on any repository
+
+This is the simplest end-to-end path. You do **not** need to understand the router, worktrees, or benchmark system first.
+
+### 1. Install the prerequisites
+
+You need:
+
+- **Git**
+- **Python 3.11+**
+- the **Codex CLI**, signed in if you want Cascade to execute model-backed tasks
+
+Check the basics:
+
+```bash
+git --version
+python --version
+codex --version
+```
+
+If you only want to inspect Cascade's routing without running a model, Codex authentication is not required for `plan` or `shadow`.
+
+### 2. Install Cascade
+
+Clone Cascade once and install it into a virtual environment:
+
+```bash
+git clone https://github.com/SriBYJU/Cascade.git
+cd Cascade
+python -m venv .venv
+source .venv/bin/activate      # Windows: .venv\\Scripts\\activate
+pip install -e ".[dev]"
+```
+
+Verify the installation:
+
+```bash
+optimizer doctor
+```
+
+A healthy result shows your Git/Python environment, Codex compatibility, discovered validators, plugin/agent checks, and any local Ollama/vLLM models.
+
+### 3. Add Cascade to the repository you want to work on
+
+Suppose your project is at `~/code/my-app`:
+
+```bash
+optimizer project-install --target ~/code/my-app --dry-run
+optimizer project-install --target ~/code/my-app
+optimizer project-status --target ~/code/my-app
+```
+
+This installs the Cascade project skill and six project-scoped agent definitions. It does **not** overwrite conflicting project files unless you explicitly use `--overwrite`.
+
+Now move into your project:
+
+```bash
+cd ~/code/my-app
+```
+
+### 4. Preview what Cascade would do
+
+Start with `plan`. This does not execute the task:
+
+```bash
+optimizer plan "Fix the API validation bug" --write "src/api/**"
+```
+
+Then ask why Cascade chose that route:
+
+```bash
 optimizer why
 ```
 
-To execute a routed worker, install/sign in to Codex CLI and run:
+You will see the selected capability class, reasoning effort, model target, risk level, evidence scope, budget, and escalation conditions.
+
+If you want an even safer preview:
 
 ```bash
-optimizer run "Fix the API validation bug" --write "src/api/**"
+optimizer shadow "Fix the API validation bug" --write "src/api/**"
 ```
 
-For write tasks Cascade creates an isolated worktree and validates the result before marking it merge-ready. It does **not** silently bypass repository or permission gates.
+### 5. Run the task
+
+For a read-only task:
+
+```bash
+optimizer run "Find where request authentication is enforced"
+```
+
+For a task that may edit files, give Cascade the narrowest reasonable write scope:
+
+```bash
+optimizer run \
+  "Fix the API validation bug and add the smallest necessary test" \
+  --write "src/api/**" \
+  --write "tests/**"
+```
+
+Cascade will route the task, gather bounded evidence, create an isolated worktree for a writer, run validation, retry/escalate only when justified, and stop at the merge gate.
+
+### 6. Inspect what happened
+
+After a run:
+
+```bash
+optimizer trace
+optimizer why
+optimizer stats
+optimizer status
+```
+
+- `trace` shows the route → context → agent → verification → merge/retry trajectory.
+- `why` explains the most recent route choice.
+- `stats` shows model tokens, weighted usage, cached input, context transfer, tool/agent calls, retries, and escalations.
+- `status` shows persisted local state and resumable work.
+
+### 7. Apply a verified change
+
+By default, writer changes stay isolated. If you want Cascade to integrate a verified result into your **clean current checkout**, use `--apply`:
+
+```bash
+optimizer run \
+  "Fix the API validation bug and add the smallest necessary test" \
+  --write "src/api/**" \
+  --write "tests/**" \
+  --apply
+```
+
+Cascade only applies after scope, validation, merge, and safety gates pass. If the main checkout is dirty or integration validation fails, it stops instead of forcing the change.
+
+### 8. Measure whether Cascade is actually saving work
+
+For ordinary runs:
+
+```bash
+optimizer stats
+```
+
+For a reproducible A/B benchmark against plain Codex:
+
+```bash
+optimizer benchmark \
+  --suite live \
+  --configs plain,cascade \
+  --repeats 3 \
+  --output .cascade/benchmarks/live
+```
+
+Then show the readable savings summary:
+
+```bash
+optimizer savings .cascade/benchmarks/live/report.json
+```
+
+For a full release-grade experiment with controlled model profiles, ablations, and parallel evidence:
+
+```bash
+optimizer release-benchmark \
+  --profiles examples/model-profiles.example.json \
+  --repeats 3
+```
+
+Use real model IDs in your own profile file before treating the results as a performance claim.
+
+### 9. Remove Cascade from a project
+
+To remove only the files managed by Cascade:
+
+```bash
+optimizer project-uninstall --target ~/code/my-app
+```
+
+If you edited a managed file after installation, normal uninstall preserves it instead of deleting your work.
+
+### The short version
+
+For everyday use, remember this flow:
+
+```text
+doctor
+  ↓
+project-install
+  ↓
+plan / shadow
+  ↓
+run
+  ↓
+trace + why + stats
+  ↓
+run --apply  (only when you want integration)
+```
 
 ## Architecture
 
