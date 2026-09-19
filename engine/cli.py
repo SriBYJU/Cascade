@@ -48,6 +48,7 @@ from .schemas import ReasoningEffort
 from .scheduler.dag import TaskNode
 from .scheduler.executor import ParallelTaskSpec, compile_safe_dag, execute_dag
 from .runtime import CascadeRuntime
+from .tutorial import render_tutorial
 from .validation.discover import discover_validators
 from .workspace.worktree import WorktreeManager
 
@@ -72,6 +73,10 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser(
         "doctor",
         help="detect Codex, local models, toolchain, validators, and hardware",
+    )
+    sub.add_parser(
+        "tutorial",
+        help="print the beginner end-to-end Cascade workflow",
     )
 
     p = sub.add_parser(
@@ -384,6 +389,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "doctor":
         _print(doctor(repo))
+        return 0
+    if args.command == "tutorial":
+        print(render_tutorial())
         return 0
     if args.command in {"plan", "shadow"}:
         task = " ".join(args.task)
