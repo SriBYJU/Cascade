@@ -115,3 +115,24 @@ optimizer benchmark-card .cascade/benchmarks/live/report.json
 ```
 
 Relative deltas remain `n/a` when the baseline denominator is zero. The Markdown card explicitly labels measured results and does not convert targets or estimates into performance claims.
+
+
+## Controlled model-pool baselines
+
+For a real model-routing experiment, pass a provider-neutral capability profile file rather than leaving every capability mapped to `auto`. The same pool is then available to Cascade and to fixed direct baselines:
+
+```bash
+optimizer benchmark --suite live \
+  --profiles examples/model-profiles.example.json \
+  --configs strongest,efficient,plain,cascade,cascade-no-context,cascade-no-cache,local \
+  --repeats 3 \
+  --output .cascade/benchmarks/model-pool
+```
+
+- `strongest` sends every task directly to the highest-capability available model in the supplied pool.
+- `efficient` sends every task directly to the lowest-cost available model in the pool.
+- `local` sends every task directly to the lowest-cost available local model and fails clearly if no local profile exists.
+- `plain` preserves the direct/default Codex path using `--model` (default `auto`).
+- `cascade` uses the full capability mapping so the router can select different models by trajectory step.
+
+The report records the entire model-pool snapshot. Model names remain configuration data, not hard-coded routing policy.
