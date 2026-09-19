@@ -33,8 +33,41 @@ def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def _safe_relative(value: str, *, label: str) -> str:
+    path = Path(value)
+    if path.is_absolute() or not path.parts or ".." in path.parts:
+        raise ValueError(f"unsafe {label} path in install receipt: {value!r}")
+    normalized = path.as_posix()
+    if normalized in {"", "."}:
+        raise ValueError(f"unsafe {label} path in install receipt: {value!r}")
+    return normalized
+
+
+def _safe_join(root: Path, rel: str, *, label: str) -> Path:
+    normalized = _safe_relative(rel, label=label)
+    candidate = root / normalized
+    resolved = candidate.resolve(strict=False)
+    if not resolved.is_relative_to(root.resolve()):
+        raise ValueError(f"{label} path escapes project root: {rel!r}")
+
+    current = root
+    for part in Path(normalized).parts[:-1]:
+        current = current / part
+        if current.exists() and current.is_symlink():
+            raise ValueError(
+                f"{label} path crosses a symlinked directory: {rel!r}"
+            )
+    if candidate.exists() and candidate.is_symlink():
+        raise ValueError(f"{label} path is a symlink: {rel!r}")
+    return candidate
+
+
 def _receipt_path(target: Path) -> Path:
-    return target / ".cascade" / "project-install.json"
+    return _safe_join(
+        target,
+        ".cascade/project-install.json",
+        label="receipt",
+    )
 
 
 def _load_receipt(target: Path) -> InstallReceipt | None:
@@ -51,16 +84,28 @@ def _load_receipt(target: Path) -> InstallReceipt | None:
     for item in files:
         if not isinstance(item, dict):
             raise ValueError("invalid Cascade project-install receipt entry")
+        entry_path = _safe_relative(
+            str(item["path"]),
+            label="managed file",
+        )
+        backup_raw = item.get("backup")
+        backup: str | None = None
+        if backup_raw is not None:
+            backup = _safe_relative(
+                str(backup_raw),
+                label="backup",
+            )
+            if not backup.startswith(".cascade/install-backups/"):
+                raise ValueError(
+                    "backup path must remain under "
+                    ".cascade/install-backups/"
+                )
         entries.append(
             InstallEntry(
-                path=str(item["path"]),
+                path=entry_path,
                 sha256=str(item["sha256"]),
                 created=bool(item["created"]),
-                backup=(
-                    str(item["backup"])
-                    if item.get("backup") is not None
-                    else None
-                ),
+                backup=backup,
             )
         )
     return InstallReceipt(version=1, files=entries)
@@ -128,7 +173,11 @@ def install_project(
     backup_root = root / ".cascade" / "install-backups"
 
     for rel, content in _resource_files():
-        destination = root / rel
+        destination = _safe_join(
+            root,
+            rel,
+            label="managed file",
+        )
         digest = _sha(content)
         previous = prior_by_path.get(rel)
         if destination.exists():
@@ -170,7 +219,11 @@ def install_project(
             ).as_posix()
             if not dry_run:
                 backup_root.mkdir(parents=True, exist_ok=True)
-                (root / backup_rel).write_bytes(existing)
+                _safe_join(
+                    root,
+                    backup_rel,
+                    label="backup",
+                ).write_bytes(existing)
             entries.append(
                 InstallEntry(
                     rel,
@@ -230,7 +283,11 @@ def project_status(target: str | Path) -> dict[str, Any]:
     files: list[dict[str, Any]] = []
     drifted = False
     for entry in receipt.files:
-        path = root / entry.path
+        path = _safe_join(
+            root,
+            entry.path,
+            label="managed file",
+        )
         if not path.exists():
             state = "missing"
             drifted = True
@@ -299,7 +356,11 @@ def uninstall_project(
             continue
 
         if entry.backup:
-            backup_path = root / entry.backup
+            backup_path = _safe_join(
+                root,
+                entry.backup,
+                label="backup",
+            )
             if backup_path.exists():
                 actions.append(
                     {

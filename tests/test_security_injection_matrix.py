@@ -94,6 +94,20 @@ def test_runtime_always_protects_policy_and_agent_instructions(
         (["git", "push", "origin", "main"], ToolRisk.NETWORK_WRITE),
         (["git", "status"], ToolRisk.READ_ONLY),
         (["env"], ToolRisk.SECRET_ACCESS),
+        (
+            ["python", "-c", "open('x','w').write('y')"],
+            ToolRisk.EXTERNAL_SIDE_EFFECT,
+        ),
+        (["pytest", "-q"], ToolRisk.EXTERNAL_SIDE_EFFECT),
+        (["find", ".", "-delete"], ToolRisk.EXTERNAL_SIDE_EFFECT),
+        (
+            ["curl", "-o", "file", "https://example.com"],
+            ToolRisk.EXTERNAL_SIDE_EFFECT,
+        ),
+        (["wget", "https://example.com/a"], ToolRisk.EXTERNAL_SIDE_EFFECT),
+        (["npm", "test"], ToolRisk.EXTERNAL_SIDE_EFFECT),
+        (["ruff", "check", "."], ToolRisk.READ_ONLY),
+        (["ruff", "check", ".", "--fix"], ToolRisk.LOCAL_WRITE),
         (["mystery-tool", "--do-stuff"], ToolRisk.EXTERNAL_SIDE_EFFECT),
     ],
 )

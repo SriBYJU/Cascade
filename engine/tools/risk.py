@@ -63,8 +63,9 @@ def _has_any(argv: list[str], values: set[str]) -> bool:
 def classify_command(argv: list[str]) -> ToolRisk:
     """Conservative command classifier.
 
-    Unknown commands intentionally fail closed into a high-risk class instead
-    of receiving READ_ONLY merely because Cascade does not recognize them.
+    Interpreters, package scripts, shell-like execution surfaces, and unknown
+    commands are never assumed read-only merely because their common use is
+    benign. Deterministic validators use their own bounded runner path.
     """
 
     if not argv:
@@ -76,6 +77,7 @@ def classify_command(argv: list[str]) -> ToolRisk:
 
     if cmd in {"rm", "del", "rmdir", "shred"}:
         return ToolRisk.DESTRUCTIVE
+
     if cmd == "git":
         if _has_any(args, {"push"}):
             return ToolRisk.NETWORK_WRITE
@@ -113,10 +115,9 @@ def classify_command(argv: list[str]) -> ToolRisk:
             },
         ):
             return ToolRisk.READ_ONLY
-        # Git subcommands not explicitly understood are not assumed safe.
         return ToolRisk.EXTERNAL_SIDE_EFFECT
 
-    if cmd in {"curl", "wget"}:
+    if cmd == "curl":
         write_flags = {
             "-d",
             "--data",
@@ -130,6 +131,13 @@ def classify_command(argv: list[str]) -> ToolRisk:
             "--post-data",
             "--post-file",
         }
+        local_write_flags = {
+            "-o",
+            "--output",
+            "-O".lower(),
+            "--remote-name",
+            "--output-dir",
+        }
         explicit_write_method = (
             "-x post" in f" {joined}"
             or "-x put" in f" {joined}"
@@ -142,18 +150,43 @@ def classify_command(argv: list[str]) -> ToolRisk:
         )
         if explicit_write_method or _has_any(args, write_flags):
             return ToolRisk.NETWORK_WRITE
+        if _has_any(args, local_write_flags):
+            return ToolRisk.EXTERNAL_SIDE_EFFECT
         return ToolRisk.NETWORK_READ
+
+    if cmd == "wget":
+        # wget writes a local file by default. Keep it approval-gated rather
+        # than guessing whether a particular flag combination is stdout-only.
+        return ToolRisk.EXTERNAL_SIDE_EFFECT
 
     if cmd in {"env", "printenv"}:
         return ToolRisk.SECRET_ACCESS
 
-    if cmd in {"grep", "rg", "ls", "pwd", "which", "where", "find"}:
+    if cmd in {"grep", "rg", "ls", "pwd", "which", "where"}:
         return ToolRisk.READ_ONLY
 
-    if cmd in {"python", "python3", "node", "pytest", "ruff", "mypy"}:
+    if cmd == "find":
+        if _has_any(
+            args,
+            {"-delete", "-exec", "-execdir", "-ok", "-okdir"},
+        ):
+            return ToolRisk.EXTERNAL_SIDE_EFFECT
         return ToolRisk.READ_ONLY
 
-    if cmd in {"npm", "pnpm", "yarn", "pip", "pip3"}:
+    # General-purpose interpreters and test runners can read secrets, write
+    # files, or contact the network from user-controlled code.
+    if cmd in {"python", "python3", "node", "pytest"}:
+        return ToolRisk.EXTERNAL_SIDE_EFFECT
+
+    if cmd == "ruff":
+        if "--fix" in args or "format" in args:
+            return ToolRisk.LOCAL_WRITE
+        return ToolRisk.READ_ONLY
+
+    if cmd == "mypy":
+        return ToolRisk.READ_ONLY
+
+    if cmd in {"npm", "pnpm", "yarn"}:
         if any(
             token in args
             for token in {
@@ -162,14 +195,54 @@ def classify_command(argv: list[str]) -> ToolRisk:
                 "remove",
                 "uninstall",
                 "update",
-                "publish",
             }
         ):
-            if "publish" in args:
-                return ToolRisk.EXTERNAL_SIDE_EFFECT
             return ToolRisk.LOCAL_WRITE
-        return ToolRisk.READ_ONLY
+        if any(
+            token in args
+            for token in {
+                "publish",
+                "run",
+                "test",
+                "exec",
+                "dlx",
+                "start",
+                "restart",
+                "stop",
+                "login",
+                "logout",
+                "token",
+                "access",
+                "deprecate",
+                "dist-tag",
+                "owner",
+            }
+        ):
+            return ToolRisk.EXTERNAL_SIDE_EFFECT
+        if any(
+            token in args
+            for token in {
+                "view",
+                "info",
+                "search",
+                "outdated",
+                "audit",
+            }
+        ):
+            return ToolRisk.NETWORK_READ
+        if any(token in args for token in {"list", "ls", "why"}):
+            return ToolRisk.READ_ONLY
+        return ToolRisk.EXTERNAL_SIDE_EFFECT
 
-    # Unknown executables may write files, contact networks, or access secrets.
-    # Explicit approval is safer than guessing READ_ONLY.
+    if cmd in {"pip", "pip3"}:
+        if any(token in args for token in {"install", "uninstall"}):
+            return ToolRisk.LOCAL_WRITE
+        if "download" in args:
+            return ToolRisk.EXTERNAL_SIDE_EFFECT
+        if any(token in args for token in {"list", "show", "freeze", "check"}):
+            return ToolRisk.READ_ONLY
+        if "index" in args:
+            return ToolRisk.NETWORK_READ
+        return ToolRisk.EXTERNAL_SIDE_EFFECT
+
     return ToolRisk.EXTERNAL_SIDE_EFFECT

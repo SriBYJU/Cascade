@@ -24,12 +24,17 @@ class BudgetManager:
 
     def reserve(self, task_id: str, reservation: BudgetReservation) -> None:
         with self._lock:
-            existing = self._reservations.get(task_id)
-            if existing:
-                self._reservations.pop(task_id)
-            total = sum(r.tokens for r in self._reservations.values()) + reservation.tokens
-            head = sum(r.head_tokens for r in self._reservations.values()) + reservation.head_tokens
-            context = sum(r.context_tokens for r in self._reservations.values()) + reservation.context_tokens
+            others = [
+                value
+                for key, value in self._reservations.items()
+                if key != task_id
+            ]
+            total = sum(r.tokens for r in others) + reservation.tokens
+            head = sum(r.head_tokens for r in others) + reservation.head_tokens
+            context = (
+                sum(r.context_tokens for r in others)
+                + reservation.context_tokens
+            )
             if total > self.total_limit:
                 raise RuntimeError("total model-token budget reservation denied")
             if head > self.head_limit:

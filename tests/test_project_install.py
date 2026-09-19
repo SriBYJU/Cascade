@@ -1,4 +1,7 @@
+import json
 from pathlib import Path
+
+import pytest
 
 from engine.project_install import (
     install_project,
@@ -84,3 +87,77 @@ def test_dry_run_makes_no_changes(tmp_path: Path):
     assert not (repo / ".codex").exists()
     assert not (repo / ".agents").exists()
     assert not (repo / ".cascade").exists()
+
+
+
+def test_receipt_path_traversal_is_rejected(tmp_path: Path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    outside = tmp_path / "outside.txt"
+    outside.write_text("keep\n")
+    state = repo / ".cascade"
+    state.mkdir()
+    (state / "project-install.json").write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "files": [
+                    {
+                        "path": "../outside.txt",
+                        "sha256": "0" * 64,
+                        "created": True,
+                        "backup": None,
+                    }
+                ],
+            }
+        )
+    )
+
+    with pytest.raises(ValueError):
+        uninstall_project(repo)
+
+    assert outside.read_text() == "keep\n"
+
+
+def test_receipt_backup_escape_is_rejected(tmp_path: Path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    state = repo / ".cascade"
+    state.mkdir()
+    (state / "project-install.json").write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "files": [
+                    {
+                        "path": ".codex/agents/scout.toml",
+                        "sha256": "0" * 64,
+                        "created": True,
+                        "backup": "../outside.bak",
+                    }
+                ],
+            }
+        )
+    )
+
+    with pytest.raises(ValueError):
+        project_status(repo)
+
+
+def test_install_rejects_symlinked_managed_directory(tmp_path: Path):
+    repo = tmp_path / "repo"
+    outside = tmp_path / "outside"
+    repo.mkdir()
+    outside.mkdir()
+    try:
+        (repo / ".codex").symlink_to(
+            outside,
+            target_is_directory=True,
+        )
+    except OSError:
+        pytest.skip("symlink creation unavailable on this platform")
+
+    with pytest.raises(ValueError):
+        install_project(repo)
+
+    assert list(outside.iterdir()) == []
