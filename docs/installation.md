@@ -32,3 +32,8 @@ Official references:
 - https://developers.openai.com/docs/non-interactive-mode
 
 Release CI should re-check these surfaces before a stable release because the plugin and custom-agent formats are still evolving.
+
+
+## Long-running goal compatibility
+
+Current Codex documentation exposes long-running `/goal` support through `[features] goals = true`. Cascade enables that supported feature in the project config, but it does **not** declare an undocumented native goal-token-budget key. Cascade's own hard reservation budgets remain the authoritative safety mechanism unless a future Codex release documents a native budget surface and `optimizer doctor` can feature-probe it.
