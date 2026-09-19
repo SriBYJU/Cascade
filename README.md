@@ -92,7 +92,7 @@ exactly what I need to click in the ChatGPT desktop Plugin Directory to
 install Cascade.
 ```
 
-After the marketplace is added, restart the ChatGPT desktop app, open the **Plugin Directory**, choose the Cascade marketplace, install **Cascade**, and start a fresh Codex conversation so the plugin is discovered from a clean session.
+After the marketplace is added, restart the ChatGPT desktop app, open the **Plugin Directory**, choose **Cascade Local**, install **Cascade**, and start a fresh Codex conversation so the plugin is discovered from a clean session.
 
 #### Codex CLI — same idea from the terminal
 
