@@ -16,6 +16,7 @@ from ..router.router import Router
 from ..runtime import CascadeRuntime
 from ..schemas import Capability, ModelProfile, ReasoningEffort
 from ..tools.runner import run_command
+from ..workspace.worktree import Worktree
 from .model_pool import EvaluationModelPool
 from .models import BenchmarkCase, TrialResult, aggregate_trials
 from .report import compare_summaries, render_markdown_report
@@ -293,6 +294,30 @@ class EvaluationHarness:
                     error=str(exc),
                 )
 
+    @staticmethod
+    def _cleanup_result_worktree(
+        runtime: CascadeRuntime,
+        result: dict[str, Any],
+        fixture_root: Path,
+    ) -> None:
+        raw_path = result.get("worktree")
+        branch = result.get("branch")
+        if not raw_path or not branch:
+            return
+        path = Path(str(raw_path))
+        if path.resolve() == fixture_root.resolve() or not path.exists():
+            return
+        worktree = Worktree(
+            task_id=str(result.get("task_id", "benchmark")),
+            path=path,
+            branch=str(branch),
+            base_ref="HEAD",
+        )
+        runtime.worktrees.cleanup(
+            worktree,
+            force=True,
+        )
+
     def _cascade_trial(
         self,
         case: BenchmarkCase,
@@ -375,7 +400,7 @@ class EvaluationHarness:
                         "acceptance": checks,
                     },
                 )
-                return TrialResult(
+                trial = TrialResult(
                     case_id=case.case_id,
                     category=case.category,
                     config=config,
@@ -395,6 +420,8 @@ class EvaluationHarness:
                     raw_trace=trace,
                     acceptance=checks,
                 )
+                self._cleanup_result_worktree(runtime, result, root)
+                return trial
             except Exception as exc:
                 wall = int((time.monotonic() - started) * 1000)
                 trace = self._write_trace(

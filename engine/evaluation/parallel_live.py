@@ -20,6 +20,7 @@ from ..scheduler.executor import (
     execute_dag,
 )
 from ..tools.runner import run_command
+from ..workspace.worktree import Worktree
 
 
 @dataclass(frozen=True, slots=True)
@@ -276,7 +277,7 @@ class ParallelLiveHarness:
                 len(node.depends_on)
                 for node in dag.nodes.values()
             )
-            return {
+            response = {
                 "measured": True,
                 "status": "completed",
                 "scenario": scenario.scenario_id,
@@ -290,6 +291,24 @@ class ParallelLiveHarness:
                 "results": results,
                 "trace": runtime.trace(),
             }
+            for task_id, result in results.items():
+                raw_path = result.get("worktree")
+                branch = result.get("branch")
+                if not raw_path or not branch:
+                    continue
+                path = Path(str(raw_path))
+                if path.resolve() == root.resolve() or not path.exists():
+                    continue
+                runtime.worktrees.cleanup(
+                    Worktree(
+                        task_id=task_id,
+                        path=path,
+                        branch=str(branch),
+                        base_ref="HEAD",
+                    ),
+                    force=True,
+                )
+            return response
 
     def run(
         self,

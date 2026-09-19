@@ -162,3 +162,34 @@ def test_plain_read_only_trial_uses_read_only_sandbox(tmp_path: Path):
     )
     assert report["trials"][0]["verified_success"] is True
     assert adapter.sandbox_modes == ["read-only"]
+
+
+
+def test_cascade_trial_cleans_external_worktree(tmp_path: Path):
+    case = BenchmarkCase(
+        case_id="cleanup",
+        category="trivial-edit",
+        task="set VALUE to 2",
+        files={"value.py": "VALUE = 1\n"},
+        write_paths=["value.py"],
+        acceptance=[
+            [
+                "python",
+                "-c",
+                "import value; assert value.VALUE == 2",
+            ]
+        ],
+    )
+    harness = EvaluationHarness(
+        tmp_path,
+        adapter=FakeEditingAdapter(),
+    )
+    report = harness.run(
+        [case],
+        configs=["cascade"],
+        repeats=1,
+        output_dir=tmp_path / "cleanup-report",
+    )
+    assert report["trials"][0]["verified_success"] is True
+    leftovers = list(tmp_path.glob(".repo.cascade-worktrees/*"))
+    assert leftovers == []

@@ -114,3 +114,58 @@ def test_parallel_live_harness_overlaps_disjoint_writers(tmp_path: Path):
     assert result["measured"] is True
     assert result["verified_success"] is True
     assert adapter.max_active >= 2
+
+
+
+def test_parallel_live_harness_cleans_writer_worktrees(tmp_path: Path):
+    scenario = ParallelLiveScenario(
+        scenario_id="cleanup",
+        files={
+            "pyproject.toml": (
+                '[project]\nname="fixture"\nversion="0.0.0"\n'
+                '[tool.pytest.ini_options]\ntestpaths=["tests"]\n'
+            ),
+            "alpha.py": "def alpha():\n    return 1\n",
+            "beta.py": "def beta():\n    return 2\n",
+            "tests/test_smoke.py": (
+                "def test_smoke():\n    assert True\n"
+            ),
+        },
+        tasks=(
+            ParallelLiveTask(
+                "alpha",
+                "Fix alpha.py so alpha() returns 10.",
+                ("alpha.py",),
+                (
+                    (
+                        "python",
+                        "-c",
+                        "from alpha import alpha; assert alpha() == 10",
+                    ),
+                ),
+            ),
+            ParallelLiveTask(
+                "beta",
+                "Fix beta.py so beta() returns 20.",
+                ("beta.py",),
+                (
+                    (
+                        "python",
+                        "-c",
+                        "from beta import beta; assert beta() == 20",
+                    ),
+                ),
+            ),
+        ),
+    )
+    result = ParallelLiveHarness(
+        tmp_path,
+        adapter=ParallelFakeAdapter(),
+    ).run_scenario(
+        scenario,
+        mode="parallel",
+        max_workers=2,
+    )
+    assert result["verified_success"] is True
+    leftovers = list(tmp_path.glob(".repo.cascade-worktrees/*"))
+    assert leftovers == []
