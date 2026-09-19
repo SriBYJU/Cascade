@@ -715,16 +715,23 @@ DIFF
             return self.ollama, target.split(":", 1)[1]
         if target.startswith("vllm:"):
             return self.vllm, target.split(":", 1)[1]
-        if (
-            self.config.local_mode
-            and route.capability in {Capability.QUICK, Capability.EXPLORE}
-        ):
-            if self.ollama.available():
-                models = self.ollama.models()
-                return self.ollama, models[0] if models else "auto"
-            if self.vllm.available():
-                models = self.vllm.models()
-                return self.vllm, models[0] if models else "auto"
+        if self.config.local_mode:
+            if route.capability in {
+                Capability.QUICK,
+                Capability.EXPLORE,
+            }:
+                if self.ollama.available():
+                    models = self.ollama.models()
+                    return (
+                        self.ollama,
+                        models[0] if models else "auto",
+                    )
+                if self.vllm.available():
+                    models = self.vllm.models()
+                    return (
+                        self.vllm,
+                        models[0] if models else "auto",
+                    )
             if not self.config.cloud_fallback:
                 return None, target
         return self.codex, target

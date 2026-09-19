@@ -39,3 +39,8 @@ Unknown executable commands also fail closed into an approval-required risk clas
 ## Metadata-only trace enforcement
 
 The default `trace_content: "metadata_only"` mode now enforces redaction before an event enters SQLite. Content-bearing fields such as worker final messages, errors, stdout/stderr, reviewer summaries/findings, architecture decisions, prompts, and diffs are replaced with type/size/SHA-256 metadata. Setting `trace_content: "full"` is an explicit local opt-in. Invalid trace modes fail closed during configuration loading.
+
+
+## Local-only cloud boundary
+
+When `local_mode=true` and `cloud_fallback=false`, Cascade now fails closed instead of returning the Codex/cloud adapter for capabilities that the prompt-only local adapters cannot safely execute. QUICK/EXPLORE may use an available Ollama/vLLM endpoint; writer and higher-risk routes are blocked unless a concrete safe local execution path is configured. This prevents the privacy-mode configuration from silently sending work to cloud inference.
