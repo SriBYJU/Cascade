@@ -11,51 +11,98 @@ def _metric(event: dict[str, Any], key: str) -> int:
     return int(value) if isinstance(value, (int, float)) else 0
 
 
+def _event_stage(name: str) -> str:
+    lowered = name.lower()
+    if "route" in lowered or "escalat" in lowered:
+        return "ROUTE"
+    if "context" in lowered or "cache" in lowered or "fingerprint" in lowered:
+        return "CONTEXT"
+    if "worker" in lowered or "architecture" in lowered:
+        return "AGENT"
+    if "validation" in lowered or "review" in lowered:
+        return "VERIFY"
+    if "merge" in lowered or "integrat" in lowered:
+        return "MERGE"
+    if "retry" in lowered or "circuit" in lowered:
+        return "RETRY"
+    return "STATE"
+
+
 def render_trace(events: list[dict[str, Any]]) -> str:
     if not events:
         return "No Cascade trace events recorded."
-    lines: list[str] = []
-    current_run: str | None = None
-    current_task: str | None = None
+
+    grouped: dict[str, dict[str, list[dict[str, Any]]]] = {}
+    run_order: list[str] = []
+    task_order: dict[str, list[str]] = {}
     for event in events:
         run_id = str(event.get("run_id", "unknown"))
         task_id = str(event.get("task_id", "unknown"))
-        if run_id != current_run:
-            lines.append(f"run {run_id}")
-            current_run = run_id
-            current_task = None
-        if task_id != current_task:
-            lines.append(f"  task {task_id}")
-            current_task = task_id
+        if run_id not in grouped:
+            grouped[run_id] = {}
+            run_order.append(run_id)
+            task_order[run_id] = []
+        if task_id not in grouped[run_id]:
+            grouped[run_id][task_id] = []
+            task_order[run_id].append(task_id)
+        grouped[run_id][task_id].append(event)
 
-        actor = str(event.get("actor", "unknown")).upper()
-        name = str(event.get("event", "event"))
-        payload = event.get("payload")
-        details: list[str] = []
-        if isinstance(payload, dict):
-            capability = payload.get("capability")
-            effort = payload.get("reasoning_effort")
-            if capability:
-                route = str(capability)
-                if effort:
-                    route += f"/{effort}"
-                details.append(route)
-            model = payload.get("model")
-            if model:
-                details.append(f"model={model}")
-            reason = payload.get("reason")
-            if reason and name in {"validation_failed", "merge_failed", "retry"}:
-                details.append(str(reason))
-        latency = _metric(event, "latency_ms")
-        if latency:
-            details.append(f"{latency}ms")
-        token_count = _metric(event, "input_tokens") + _metric(
-            event, "output_tokens"
-        )
-        if token_count:
-            details.append(f"{token_count}tok")
-        suffix = f"  {' | '.join(details)}" if details else ""
-        lines.append(f"    {actor:<13} {name}{suffix}")
+    lines: list[str] = []
+    for run_index, run_id in enumerate(run_order):
+        if run_index:
+            lines.append("")
+        lines.append(f"run {run_id}")
+        tasks = task_order[run_id]
+        for task_index, task_id in enumerate(tasks):
+            task_last = task_index == len(tasks) - 1
+            task_branch = "└─" if task_last else "├─"
+            child_prefix = "   " if task_last else "│  "
+            lines.append(f"{task_branch} task {task_id}")
+            task_events = grouped[run_id][task_id]
+            for event_index, event in enumerate(task_events):
+                event_last = event_index == len(task_events) - 1
+                event_branch = "└─" if event_last else "├─"
+                actor = str(event.get("actor", "unknown")).upper()
+                name = str(event.get("event", "event"))
+                stage = _event_stage(name)
+                payload = event.get("payload")
+                details: list[str] = []
+                if isinstance(payload, dict):
+                    capability = payload.get("capability")
+                    effort = payload.get("reasoning_effort")
+                    if capability:
+                        route = str(capability)
+                        if effort:
+                            route += f"/{effort}"
+                        details.append(route)
+                    model = payload.get("model")
+                    if model:
+                        details.append(f"model={model}")
+                    reason = payload.get("reason")
+                    if reason and name in {
+                        "validation_failed",
+                        "merge_failed",
+                        "retry",
+                    }:
+                        details.append(str(reason))
+                latency = _metric(event, "latency_ms")
+                if latency:
+                    details.append(f"{latency}ms")
+                token_count = _metric(
+                    event,
+                    "input_tokens",
+                ) + _metric(event, "output_tokens")
+                if token_count:
+                    details.append(f"{token_count}tok")
+                suffix = (
+                    f"  {' | '.join(details)}"
+                    if details
+                    else ""
+                )
+                lines.append(
+                    f"{child_prefix}{event_branch} "
+                    f"{stage:<7} {actor:<11} {name}{suffix}"
+                )
     return "\n".join(lines)
 
 
@@ -72,9 +119,11 @@ def render_why(payload: dict[str, Any] | None) -> str:
     lines = [
         f"ROUTE: {capability} / {effort}",
         f"MODEL: {model}",
-        f"CACHE AFFINITY: {float(cache):.3f}"
-        if isinstance(cache, (int, float))
-        else f"CACHE AFFINITY: {cache}",
+        (
+            f"CACHE AFFINITY: {float(cache):.3f}"
+            if isinstance(cache, (int, float))
+            else f"CACHE AFFINITY: {cache}"
+        ),
     ]
     if isinstance(budget, dict):
         lines.append(
@@ -99,26 +148,37 @@ def render_stats(stats: dict[str, Any]) -> str:
     )
     cached = int(stats.get("cached_input_tokens", 0))
     lines = [
-        f"HEAD MODEL TOKENS: {head}",
-        f"WORKER MODEL TOKENS: {worker}",
-        f"TOTAL MODEL TOKENS: {total}",
-        f"WEIGHTED USAGE: {float(stats.get('weighted_usage', 0.0)):.2f}",
-        f"CACHED INPUT TOKENS: {cached}",
-        f"ROUTES: {int(stats.get('routes', 0))}",
-        f"RETRIES: {int(stats.get('retries', 0))}",
-        f"ESCALATIONS: {int(stats.get('escalations', 0))}",
-        f"MODEL LATENCY: {int(stats.get('latency_ms', 0))}ms",
-        f"CONTEXT TRANSFER: {int(stats.get('context_bytes', 0))} bytes",
-        f"TOOL CALLS: {int(stats.get('tool_calls', 0))}",
-        f"AGENT CALLS: {int(stats.get('agent_calls', 0))}",
-        f"TRAJECTORY STEPS: {int(stats.get('trajectory_steps', 0))}",
+        "MODEL USAGE",
+        f"  HEAD MODEL TOKENS: {head}",
+        f"  WORKER MODEL TOKENS: {worker}",
+        f"  TOTAL MODEL TOKENS: {total}",
+        f"  WEIGHTED USAGE: {float(stats.get('weighted_usage', 0.0)):.2f}",
+        f"  CACHED INPUT TOKENS: {cached}",
+        "",
+        "ROUTING",
+        f"  ROUTES: {int(stats.get('routes', 0))}",
+        f"  RETRIES: {int(stats.get('retries', 0))}",
+        f"  ESCALATIONS: {int(stats.get('escalations', 0))}",
+        "",
+        "EXECUTION",
+        f"  MODEL LATENCY: {int(stats.get('latency_ms', 0))}ms",
+        f"  CONTEXT TRANSFER: {int(stats.get('context_bytes', 0))} bytes",
+        f"  TOOL CALLS: {int(stats.get('tool_calls', 0))}",
+        f"  AGENT CALLS: {int(stats.get('agent_calls', 0))}",
+        f"  TRAJECTORY STEPS: {int(stats.get('trajectory_steps', 0))}",
     ]
     cache = stats.get("cache")
     if isinstance(cache, dict):
-        lines.append(
-            "EXACT CACHE: "
-            f"{int(cache.get('entries', 0))} entries / "
-            f"{int(cache.get('hits', 0))} hits"
+        lines.extend(
+            [
+                "",
+                "CACHE",
+                (
+                    "  EXACT CACHE: "
+                    f"{int(cache.get('entries', 0))} entries / "
+                    f"{int(cache.get('hits', 0))} hits"
+                ),
+            ]
         )
     regret = stats.get("route_regret")
     if isinstance(regret, dict):
@@ -129,19 +189,18 @@ def render_stats(stats: dict[str, Any]) -> str:
             else f"{float(mean):.2f}"
         )
         lines.append(
-            "ROUTE REGRET: "
+            "  ROUTE REGRET: "
             f"{mean_text} mean / "
             f"{int(regret.get('samples', 0))} replay samples"
         )
     affinity = stats.get("prompt_cache_affinity")
     if isinstance(affinity, dict):
         lines.append(
-            "PROMPT CACHE EVIDENCE: "
+            "  PROMPT CACHE EVIDENCE: "
             f"{int(affinity.get('cached_input_tokens', 0))} cached / "
             f"{int(affinity.get('input_tokens', 0))} input tokens"
         )
     return "\n".join(lines)
-
 
 
 def render_plan(planned: dict[str, Any], *, mode: str = "plan") -> str:
@@ -175,7 +234,11 @@ def render_plan(planned: dict[str, Any], *, mode: str = "plan") -> str:
         f"WORKER: {role}",
         f"RISK: {risk}",
         f"WORKSPACE: {worktree}",
-        f"EVIDENCE REFS: {len(evidence) if isinstance(evidence, list) else 0}",
+        (
+            f"EVIDENCE REFS: {len(evidence)}"
+            if isinstance(evidence, list)
+            else "EVIDENCE REFS: 0"
+        ),
         (
             "WRITE SCOPE: "
             + ", ".join(str(item) for item in write_paths)

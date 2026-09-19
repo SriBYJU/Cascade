@@ -108,3 +108,45 @@ def test_plan_renderer_exposes_route_workspace_and_budget():
     assert "WORKSPACE: isolated writer worktree" in text
     assert "EVIDENCE REFS: 2" in text
     assert "8000 model tokens" in text
+
+
+
+def test_trace_renderer_distinguishes_validation_and_merge_stages():
+    text = render_trace(
+        [
+            {
+                "run_id": "r2",
+                "task_id": "t2",
+                "actor": "deterministic",
+                "event": "validation_passed",
+                "metrics": {},
+                "payload": {},
+            },
+            {
+                "run_id": "r2",
+                "task_id": "t2",
+                "actor": "integrator",
+                "event": "merge_completed",
+                "metrics": {},
+                "payload": {},
+            },
+        ]
+    )
+    assert "VERIFY" in text
+    assert "MERGE" in text
+    assert "└─ task t2" in text
+
+
+def test_stats_renderer_has_visual_sections():
+    text = render_stats(
+        {
+            "head_tokens": 1,
+            "worker_input_tokens": 2,
+            "worker_output_tokens": 3,
+            "total_model_tokens": 6,
+            "weighted_usage": 4.0,
+        }
+    )
+    assert "MODEL USAGE" in text
+    assert "ROUTING" in text
+    assert "EXECUTION" in text
