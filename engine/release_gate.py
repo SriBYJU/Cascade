@@ -252,9 +252,9 @@ def release_gate(
             "ubuntu-latest",
             "macos-latest",
             "windows-latest",
-            '"3.11"',
-            '"3.12"',
-            '"3.13"',
+            "3.11",
+            "3.12",
+            "3.13",
         )
     )
     _check(

@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from engine.release_gate import release_gate, render_release_gate
 
 
@@ -53,4 +55,4 @@ def test_release_gate_checks_measured_report(tmp_path: Path):
     )
     result = release_gate(root, benchmark_report=report)
     assert result["measured_release_evidence"] is True
-    assert result["savings"]["token_savings_percent"] == 30.0
+    assert result["savings"]["token_savings_percent"] == pytest.approx(30.0)
