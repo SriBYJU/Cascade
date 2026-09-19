@@ -71,3 +71,15 @@ optimizer benchmark --suite live \
 ```
 
 The parallel-DAG ablation remains a separate roadmap item because single-task live fixtures do not exercise DAG concurrency; Cascade does not label a no-op switch as a measured ablation.
+
+
+## Parallel scheduler micro-benchmark
+
+`optimizer benchmark --suite parallel` measures only the local scheduler's ability to overlap three independent nodes while still serializing overlapping writer scopes.
+
+```bash
+optimizer benchmark --suite parallel --repeats 5 \
+  --output .cascade/benchmarks/parallel.json
+```
+
+This benchmark is deliberately labeled **scheduler-only**. It proves the DAG/concurrency machinery can create parallel benefit without violating write-set serialization, but it is not an end-to-end model-latency claim. A live parallel-agent suite is still required before publishing product performance numbers.

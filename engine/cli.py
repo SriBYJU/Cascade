@@ -11,6 +11,7 @@ from .context.repo_map import build_repo_map
 from .doctor import doctor
 from .evaluation.harness import EvaluationHarness
 from .evaluation.models import load_cases
+from .evaluation.parallel_benchmark import run_scheduler_benchmark
 from .evaluation.report import load_report, measured_policy_certificate
 from .observability.render import (
     render_plan,
@@ -151,7 +152,11 @@ def build_parser() -> argparse.ArgumentParser:
         "benchmark",
         help="run reproducible local benchmark fixtures",
     )
-    p.add_argument("--suite", default="micro", choices=["micro", "live"])
+    p.add_argument(
+        "--suite",
+        default="micro",
+        choices=["micro", "live", "parallel"],
+    )
     p.add_argument(
         "--output",
         default=".cascade/benchmarks/latest.json",
@@ -414,6 +419,17 @@ def main(argv: list[str] | None = None) -> int:
             out.write_text(json.dumps(result, indent=2, sort_keys=True))
             _print({"output": str(out), **result["summary"]})
             return 0 if result["summary"]["failures"] == 0 else 1
+
+        if args.suite == "parallel":
+            result = run_scheduler_benchmark(
+                repeats=args.repeats,
+                max_workers=runtime.config.max_concurrent_workers,
+            )
+            out = repo / args.output
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(json.dumps(result, indent=2, sort_keys=True))
+            _print({"output": str(out), **result})
+            return 0
 
         manifest = repo / args.manifest
         cases = load_cases(manifest)
