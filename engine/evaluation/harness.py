@@ -206,7 +206,7 @@ class EvaluationHarness:
                 runtime.config.local_mode = False
                 runtime.config.cloud_fallback = True
                 if model != "auto":
-                    overrides = {
+                    overrides: dict[Capability, str] = {
                         capability: model
                         for capability in Capability
                         if capability != Capability.NO_MODEL

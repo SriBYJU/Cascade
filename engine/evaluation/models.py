@@ -6,7 +6,7 @@ from collections import defaultdict
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,7 +75,7 @@ class TrialResult:
     acceptance: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
-        return cast(dict[str, Any], asdict(self))
+        return asdict(self)
 
 
 def load_cases(path: str | Path) -> list[BenchmarkCase]:
