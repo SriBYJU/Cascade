@@ -53,6 +53,23 @@ def main() -> int:
         f"missing Cascade agents: {sorted(REQUIRED_AGENTS - found)}"
     )
 
+    marketplace_path = ROOT / ".agents" / "plugins" / "marketplace.json"
+    marketplace = json.loads(marketplace_path.read_text())
+    assert marketplace["name"] == "cascade-local"
+    assert marketplace["interface"]["displayName"] == "Cascade Local"
+    entries = marketplace.get("plugins", [])
+    assert isinstance(entries, list) and len(entries) == 1
+    entry = entries[0]
+    assert entry["name"] == "cascade"
+    assert entry["source"] == {"source": "local", "path": "./"}
+    assert entry["policy"]["installation"] in {
+        "AVAILABLE",
+        "INSTALLED_BY_DEFAULT",
+        "NOT_AVAILABLE",
+    }
+    assert entry["policy"]["authentication"]
+    assert entry["category"] == "Productivity"
+
     config_path = ROOT / ".codex" / "config.toml"
     with config_path.open("rb") as handle:
         config = tomllib.load(handle)
@@ -72,7 +89,7 @@ def main() -> int:
 
     print(
         "Cascade plugin layout OK: "
-        f"{len(skills)} skill(s), {len(found)} agent(s)"
+        f"{len(skills)} skill(s), {len(found)} agent(s), marketplace OK"
     )
     return 0
 

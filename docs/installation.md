@@ -56,3 +56,25 @@ optimizer project-uninstall --target /path/to/repo
 ```
 
 This direct project integration is complementary to plugin-marketplace installation: the plugin exposes the reusable Cascade skill, while project installation is the explicit path for the six project-scoped custom-agent TOML definitions documented by Codex.
+
+
+## Repository marketplace smoke path
+
+Cascade now includes `.agents/plugins/marketplace.json` as a one-plugin repository marketplace. With a current Codex CLI, the supported marketplace workflow is:
+
+```bash
+codex plugin marketplace add ./
+codex plugin marketplace list
+codex
+# then open /plugins, select "Cascade Local", and install Cascade
+```
+
+After installation, start a new Codex session so the plugin skill is discovered. The repository marketplace points directly at the repository root, where the portable `plugin.json` and `skills/` live. The six custom agents remain a separate project-scoped Codex surface and are installed with `optimizer project-install`.
+
+To remove the added marketplace from Codex configuration:
+
+```bash
+codex plugin marketplace remove cascade-local
+```
+
+The marketplace catalog is validated in CI together with both plugin manifests and the packaged skill/agent resources.

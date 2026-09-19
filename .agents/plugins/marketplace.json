@@ -1,0 +1,20 @@
+{
+  "name": "cascade-local",
+  "interface": {
+    "displayName": "Cascade Local"
+  },
+  "plugins": [
+    {
+      "name": "cascade",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
