@@ -80,3 +80,29 @@ def test_mismatched_trials_are_rejected():
     report["summary"]["cascade"]["trials"] = 5
     with pytest.raises(ValueError):
         savings_summary(report)
+
+
+
+def test_public_claim_requires_release_grade_evidence():
+    result = savings_summary(_report())
+    assert result["token_claim_eligible"] is True
+    assert result["release_grade_evidence"] is False
+    assert result["public_token_claim_eligible"] is False
+    assert "not release-grade evidence" in render_savings(result)
+
+
+def test_public_claim_unlocks_only_with_release_grade_metadata():
+    report = _report()
+    report["case_ids"] = [f"case-{index}" for index in range(20)]
+    report["summary"]["plain"]["trials"] = 60
+    report["summary"]["cascade"]["trials"] = 60
+    report["environment"] = {"python": "3.12"}
+    report["policy_lock"] = {"digest": "abc"}
+
+    result = savings_summary(report)
+
+    assert result["release_grade_evidence"] is True
+    assert result["public_token_claim_eligible"] is True
+    assert "release-grade measured token reduction" in render_savings(
+        result
+    )

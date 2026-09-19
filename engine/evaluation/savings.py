@@ -153,16 +153,38 @@ def savings_summary(
         and equal_or_better_quality
     )
 
+    case_ids = report.get("case_ids", [])
+    case_count = len(case_ids) if isinstance(case_ids, list) else 0
+    repeats = int(_number(report.get("repeats")))
+    source_commit = report.get("source_commit")
+    environment = report.get("environment")
+    policy_lock = report.get("policy_lock")
+    expected_trials = case_count * repeats
+    release_grade_evidence = (
+        case_count >= 20
+        and repeats >= 3
+        and baseline_trials == expected_trials
+        and candidate_trials == expected_trials
+        and isinstance(source_commit, str)
+        and bool(source_commit)
+        and isinstance(environment, dict)
+        and isinstance(policy_lock, dict)
+    )
+    public_token_claim_eligible = (
+        token_claim_eligible and release_grade_evidence
+    )
+    public_weighted_claim_eligible = (
+        weighted_claim_eligible and release_grade_evidence
+    )
+
     return {
         "measured": True,
         "baseline": baseline,
         "candidate": candidate,
         "matched_trials": baseline_trials,
-        "cases": len(report.get("case_ids", []))
-        if isinstance(report.get("case_ids"), list)
-        else 0,
-        "repeats": int(_number(report.get("repeats"))),
-        "source_commit": report.get("source_commit"),
+        "cases": case_count,
+        "repeats": repeats,
+        "source_commit": source_commit,
         "token_savings_percent": token_savings,
         "weighted_usage_savings_percent": weighted_savings,
         "wall_time_savings_percent": wall_savings,
@@ -194,6 +216,11 @@ def savings_summary(
         "equal_or_better_quality": equal_or_better_quality,
         "token_claim_eligible": token_claim_eligible,
         "weighted_usage_claim_eligible": weighted_claim_eligible,
+        "release_grade_evidence": release_grade_evidence,
+        "public_token_claim_eligible": public_token_claim_eligible,
+        "public_weighted_usage_claim_eligible": (
+            public_weighted_claim_eligible
+        ),
     }
 
 
@@ -250,13 +277,24 @@ def render_savings(summary: dict[str, Any]) -> str:
         f"Source commit: {summary.get('source_commit') or 'unknown'}",
     ]
 
-    if summary.get("token_claim_eligible"):
+    if summary.get("public_token_claim_eligible"):
         lines.extend(
             [
                 "",
                 (
-                    "CLAIM STATUS: measured token reduction with "
-                    "equal-or-better verified success."
+                    "CLAIM STATUS: release-grade measured token reduction "
+                    "with equal-or-better verified success."
+                ),
+            ]
+        )
+    elif summary.get("token_claim_eligible"):
+        lines.extend(
+            [
+                "",
+                (
+                    "CLAIM STATUS: measured reduction exists, but this "
+                    "report is not release-grade evidence for a public "
+                    "headline claim."
                 ),
             ]
         )
