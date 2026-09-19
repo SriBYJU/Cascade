@@ -153,6 +153,7 @@ def render_savings(summary: dict[str, Any]) -> str:
 
     lines = [
         "CASCADE SAVINGS",
+        f"Candidate: {candidate}",
         f"Compared with: {baseline}",
         "",
         f"Token savings:             {_fmt_percent(token)}",
