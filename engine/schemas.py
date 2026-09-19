@@ -61,6 +61,9 @@ class ValidationCheck(StrictModel):
 class ValidationResult(StrictModel):
     passed:bool; risk:RiskLevel; checks:list[ValidationCheck]=Field(default_factory=list); changed_files:list[str]=Field(default_factory=list); unexpected_files:list[str]=Field(default_factory=list); unresolved_high_severity:list[str]=Field(default_factory=list)
 
+class ReviewDecision(StrictModel):
+    passed:bool; findings:list[str]=Field(default_factory=list); summary:str=""
+
 class Event(StrictModel):
     run_id:str; task_id:str; attempt_id:int=Field(default=1,ge=0); event:str; ts:str=Field(default_factory=lambda:datetime.now(timezone.utc).isoformat()); actor:str; provenance:Provenance|None=None; metrics:dict[str,float|int]=Field(default_factory=dict); payload:dict[str,Any]=Field(default_factory=dict); payload_redacted:bool=True
 

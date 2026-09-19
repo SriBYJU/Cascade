@@ -35,3 +35,8 @@ Cascade is a Codex-native plugin with a portable Python 3.11+ local engine. Its 
 ## Structural repository map
 
 The repository map now persists an exact-fingerprint local cache under `.cascade/repo-map.json` and records package boundaries, entry points, resolved intra-repository imports, reverse import edges, and test-to-implementation targets. Retrieval scoring can therefore rank structural neighbors rather than relying only on filename/token overlap. Python resolution uses the standard AST; relative JS/TS imports receive lightweight local resolution. Optional tree-sitter/LSP enrichment remains a future adapter rather than a mandatory dependency.
+
+
+## High-risk reviewer trajectory step
+
+After deterministic validation succeeds, HIGH and CRITICAL write tasks now enter a separate read-only reviewer step before becoming merge-ready. The reviewer sees a capped diff plus machine-validation evidence, runs with an explicit read-only sandbox, and must return structured JSON. Malformed reviewer output, adapter failure, or a material reviewer finding blocks the task. Low-risk bounded changes retain the fast lane and skip this expensive review step.
