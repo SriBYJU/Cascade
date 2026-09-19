@@ -88,4 +88,7 @@ class RunSummary(StrictModel):
     run_id:str; verified_success:bool; head_input_tokens:int=0; head_output_tokens:int=0; worker_input_tokens:int=0; worker_output_tokens:int=0; cached_input_tokens:int=0; weighted_usage:float=0.0; context_bytes:int=0; wall_time_ms:int=0; retries:int=0; escalations:int=0; tool_calls:int=0; agent_calls:int=0
 
 def normalize_repo_path(path:str|Path)->str:
-    return Path(path).as_posix().lstrip("./")
+    raw = Path(path).as_posix()
+    while raw.startswith("./"):
+        raw = raw[2:]
+    return raw
