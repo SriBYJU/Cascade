@@ -52,6 +52,15 @@ def test_install_refuses_to_overwrite_project_files(tmp_path: Path):
     else:
         raise AssertionError("installer overwrote a user-owned file")
 
+    # The conflict is intentionally late in the resource list. Preflight
+    # must prevent earlier managed files from being partially installed.
+    assert not (
+        repo / ".codex" / "agents" / "architect.toml"
+    ).exists()
+    assert not (
+        repo / ".agents" / "skills" / "cascade-optimizer"
+    ).exists()
+
 
 def test_overwrite_restores_backup_on_uninstall(tmp_path: Path):
     repo = tmp_path / "repo"

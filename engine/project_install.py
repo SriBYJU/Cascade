@@ -163,6 +163,16 @@ def install_project(
     if not root.exists() or not root.is_dir():
         raise ValueError(f"project target is not a directory: {root}")
 
+    # Preflight the complete resource set before the first write. This keeps
+    # a normal install all-or-nothing for stable project state: a conflict in
+    # a later agent/skill file cannot leave earlier managed files behind.
+    if not dry_run:
+        install_project(
+            root,
+            overwrite=overwrite,
+            dry_run=True,
+        )
+
     prior = _load_receipt(root)
     prior_by_path = {
         entry.path: entry
