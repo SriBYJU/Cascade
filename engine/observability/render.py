@@ -3,6 +3,101 @@ from __future__ import annotations
 from typing import Any
 
 
+def compact_trace(events: list[dict[str, Any]]) -> dict[str, Any]:
+    """Return a deterministic, metadata-only trace export."""
+    runs: dict[str, dict[str, Any]] = {}
+    summary = {
+        "events": 0,
+        "routes": 0,
+        "retries": 0,
+        "escalations": 0,
+        "validation_passed": 0,
+        "validation_failed": 0,
+    }
+    for event in events:
+        run_id = str(event.get("run_id", "unknown"))
+        task_id = str(event.get("task_id", "unknown"))
+        run = runs.setdefault(run_id, {"run_id": run_id, "tasks": {}})
+        task = run["tasks"].setdefault(
+            task_id,
+            {"task_id": task_id, "events": []},
+        )
+        name = str(event.get("event", "event"))
+        metrics = event.get("metrics")
+        safe_metrics = (
+            {
+                key: metrics[key]
+                for key in (
+                    "latency_ms",
+                    "input_tokens",
+                    "output_tokens",
+                    "cached_input_tokens",
+                    "context_bytes",
+                )
+                if key in metrics
+            }
+            if isinstance(metrics, dict)
+            else {}
+        )
+        payload = event.get("payload")
+        safe_payload: dict[str, Any] = {}
+        if isinstance(payload, dict):
+            for key in (
+                "capability",
+                "reasoning_effort",
+                "model",
+                "model_target",
+                "passed",
+                "timed_out",
+            ):
+                if key in payload:
+                    safe_payload[key] = payload[key]
+            checks = payload.get("checks")
+            if isinstance(checks, list):
+                safe_payload["checks"] = len(checks)
+        provenance = event.get("provenance")
+        safe_provenance = {}
+        if isinstance(provenance, dict):
+            for key in ("source_type", "source_id", "trust", "scope"):
+                if key in provenance:
+                    safe_provenance[key] = provenance[key]
+        task["events"].append(
+            {
+                "attempt_id": int(event.get("attempt_id", 1)),
+                "event": name,
+                "ts": str(event.get("ts", "")),
+                "actor": str(event.get("actor", "unknown")),
+                "metrics": safe_metrics,
+                "metadata": safe_payload,
+                "provenance": safe_provenance,
+            }
+        )
+        summary["events"] += 1
+        if name == "route_selected":
+            summary["routes"] += 1
+        elif name == "retry":
+            summary["retries"] += 1
+        elif name == "escalated":
+            summary["escalations"] += 1
+        elif name == "validation_passed":
+            summary["validation_passed"] += 1
+        elif name == "validation_failed":
+            summary["validation_failed"] += 1
+
+    return {
+        "format": "cascade-compact-trace",
+        "version": 1,
+        "summary": summary,
+        "runs": [
+            {
+                "run_id": run["run_id"],
+                "tasks": list(run["tasks"].values()),
+            }
+            for run in runs.values()
+        ],
+    }
+
+
 def _metric(event: dict[str, Any], key: str) -> int:
     metrics = event.get("metrics")
     if not isinstance(metrics, dict):

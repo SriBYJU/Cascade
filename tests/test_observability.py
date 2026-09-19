@@ -1,4 +1,10 @@
-from engine.observability.render import render_plan, render_stats, render_trace, render_why
+from engine.observability.render import (
+    compact_trace,
+    render_plan,
+    render_stats,
+    render_trace,
+    render_why,
+)
 
 
 def test_trace_renderer_builds_tree():
@@ -34,6 +40,58 @@ def test_trace_renderer_builds_tree():
     assert "HEAD" in text
     assert "build/medium" in text
     assert "120tok" in text
+
+
+def test_compact_trace_export_is_metadata_only_and_deterministic():
+    events = [
+        {
+            "run_id": "r1",
+            "task_id": "t1",
+            "attempt_id": 2,
+            "event": "route_selected",
+            "ts": "2026-01-01T00:00:00Z",
+            "actor": "head",
+            "metrics": {"latency_ms": 10, "secret_metric": "omit"},
+            "payload": {
+                "capability": "build",
+                "reasoning_effort": "medium",
+                "model_target": "auto",
+                "prompt": "do not export this",
+            },
+            "provenance": {
+                "source_type": "cascade",
+                "source_id": "runtime",
+                "trust": "trusted-policy",
+            },
+        },
+        {
+            "run_id": "r1",
+            "task_id": "t1",
+            "event": "validation_passed",
+            "actor": "deterministic",
+            "metrics": {"input_tokens": 4, "output_tokens": 2},
+            "payload": {"passed": True, "checks": [{"name": "pytest"}]},
+        },
+    ]
+
+    exported = compact_trace(events)
+
+    assert exported["format"] == "cascade-compact-trace"
+    assert exported["summary"] == {
+        "events": 2,
+        "routes": 1,
+        "retries": 0,
+        "escalations": 0,
+        "validation_passed": 1,
+        "validation_failed": 0,
+    }
+    assert exported["runs"][0]["tasks"][0]["events"][0]["metadata"] == {
+        "capability": "build",
+        "reasoning_effort": "medium",
+        "model_target": "auto",
+    }
+    assert "prompt" not in str(exported)
+    assert "secret_metric" not in str(exported)
 
 
 def test_why_renderer_exposes_cache_budget_and_escalation():

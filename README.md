@@ -244,6 +244,9 @@ optimizer status
 ```
 
 - `trace` shows the route → context → agent → verification → merge/retry trajectory.
+- `trace --compact` exports deterministic metadata-only JSON for bug reports; it
+  includes routing, timings, token metrics, validation, retries/escalations, and
+  provenance, but never source excerpts, prompts, stdout/stderr, or worker prose.
 - `why` explains the most recent route choice.
 - `stats` shows model tokens, weighted usage, cached input, context transfer, tool/agent calls, retries, and escalations.
 - `status` shows persisted local state and resumable work.

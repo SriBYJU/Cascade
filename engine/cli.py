@@ -24,6 +24,7 @@ from .evaluation.report import (
 from .evaluation.release_bundle import run_release_benchmark
 from .evaluation.savings import render_savings, savings_summary
 from .observability.render import (
+    compact_trace,
     render_plan,
     render_stats,
     render_trace,
@@ -139,6 +140,11 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("trace", help="show execution event tree")
     p.add_argument("run_id", nargs="?")
     p.add_argument("--json", action="store_true")
+    p.add_argument(
+        "--compact",
+        action="store_true",
+        help="export deterministic metadata-only trace JSON",
+    )
     p = sub.add_parser("why", help="explain most recent route")
     p.add_argument("--json", action="store_true")
     p = sub.add_parser(
@@ -454,7 +460,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "trace":
         trace = runtime.trace(args.run_id)
-        if args.json:
+        if args.compact:
+            _print(compact_trace(trace))
+        elif args.json:
             _print(trace)
         else:
             print(render_trace(trace))
