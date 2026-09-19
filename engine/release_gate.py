@@ -435,21 +435,8 @@ def release_gate(
         "measured_release_evidence": (
             benchmark_report is not None
             and parallel_report is not None
-        )
-        and not [
-            item
-            for item in checks
-            if item["required"]
-            and item["name"].startswith("benchmark")
-            and not item["passed"]
-        ]
-        and not [
-            item
-            for item in checks
-            if item["required"]
-            and item["name"] in {"measured-benchmark", "plain-vs-cascade", "raw-trajectories"}
-            and not item["passed"]
-        ],
+            and not required_failures
+        ),
         "checks": checks,
         "required_failures": required_failures,
         "optional_target_misses": optional_failures,
