@@ -109,7 +109,7 @@ def test_release_gate_rejects_failed_parallel_evidence(
     raw_a.write_text("{}")
     raw_b.write_text("{}")
     report.write_text(
-        f"""{{{{
+        f"""{{
           "measured": true,
           "source_commit": "abc123",
           "repeats": 3,
@@ -145,7 +145,7 @@ def test_release_gate_rejects_failed_parallel_evidence(
               "cached_input_tokens_mean": 100
             }}
           }}
-        }}}}"""
+        }}"""
     )
     parallel = tmp_path / "parallel.json"
     parallel.write_text(
