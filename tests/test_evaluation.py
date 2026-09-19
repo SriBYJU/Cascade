@@ -20,8 +20,9 @@ class FakeEditingAdapter:
         model: str = "auto",
         effort: ReasoningEffort = ReasoningEffort.MEDIUM,
         timeout_seconds: int = 900,
+        sandbox_mode: str = "read-only",
     ) -> AdapterResult:
-        del prompt, model, effort, timeout_seconds
+        del prompt, model, effort, timeout_seconds, sandbox_mode
         Path(cwd, "value.py").write_text("VALUE = 2\n")
         return AdapterResult(
             True,

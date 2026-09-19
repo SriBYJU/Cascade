@@ -13,7 +13,7 @@ class OllamaAdapter:
         if not self.available(): return []
         with urllib.request.urlopen(self.base_url+"/api/tags",timeout=2.0) as r: data=json.loads(r.read().decode())
         return [m.get("name","") for m in data.get("models",[]) if m.get("name")]
-    def run(self,prompt:str,*,cwd:str,model:str="auto",effort:ReasoningEffort=ReasoningEffort.MEDIUM,timeout_seconds:int=900)->AdapterResult:
+    def run(self,prompt:str,*,cwd:str,model:str="auto",effort:ReasoningEffort=ReasoningEffort.MEDIUM,timeout_seconds:int=900,sandbox_mode:str="read-only")->AdapterResult:
         if model=="auto":
             models=self.models()
             if not models: return AdapterResult(False,"",error="no Ollama model is available")

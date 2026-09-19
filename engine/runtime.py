@@ -489,11 +489,18 @@ BOUNDED EVIDENCE
             validation_feedback=validation_feedback,
         )
         start = time.monotonic()
+        sandbox_mode = (
+            "workspace-write"
+            if planned.envelope.role
+            in {"builder", "debugger", "integrator"}
+            else "read-only"
+        )
         result = adapter.run(
             prompt,
             cwd=str(root),
             model=model,
             effort=planned.route.reasoning_effort,
+            sandbox_mode=sandbox_mode,
         )
         elapsed = int((time.monotonic() - start) * 1000)
         tool_item_types = {
@@ -542,6 +549,7 @@ BOUNDED EVIDENCE
                 "adapter": adapter.name,
                 "model": model,
                 "capability": planned.route.capability.value,
+                "sandbox_mode": sandbox_mode,
                 "final_message": (
                     result.final_message[-1200:] if result.final_message else ""
                 ),

@@ -13,7 +13,7 @@ class VLLMAdapter:
         if not self.available(): return []
         with urllib.request.urlopen(self.base_url+"/models",timeout=2.0) as r: data=json.loads(r.read().decode())
         return [m.get("id","") for m in data.get("data",[]) if m.get("id")]
-    def run(self,prompt:str,*,cwd:str,model:str="auto",effort:ReasoningEffort=ReasoningEffort.MEDIUM,timeout_seconds:int=900)->AdapterResult:
+    def run(self,prompt:str,*,cwd:str,model:str="auto",effort:ReasoningEffort=ReasoningEffort.MEDIUM,timeout_seconds:int=900,sandbox_mode:str="read-only")->AdapterResult:
         models=self.models(); model=models[0] if model=="auto" and models else model
         if not model or model=="auto": return AdapterResult(False,"",error="no vLLM model is available")
         payload=json.dumps({"model":model,"input":prompt}).encode(); req=urllib.request.Request(self.base_url+"/responses",data=payload,headers={"Content-Type":"application/json"})

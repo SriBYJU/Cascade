@@ -37,8 +37,9 @@ class AlwaysFailAdapter:
         model: str = "auto",
         effort: ReasoningEffort = ReasoningEffort.MEDIUM,
         timeout_seconds: int = 900,
+        sandbox_mode: str = "read-only",
     ) -> AdapterResult:
-        del prompt, cwd, model, effort, timeout_seconds
+        del prompt, cwd, model, effort, timeout_seconds, sandbox_mode
         return AdapterResult(False, "", error="synthetic failure")
 
 

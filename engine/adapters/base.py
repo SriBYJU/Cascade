@@ -28,4 +28,5 @@ class ModelAdapter(Protocol):
         model: str = "auto",
         effort: ReasoningEffort = ReasoningEffort.MEDIUM,
         timeout_seconds: int = 900,
+        sandbox_mode: str = "read-only",
     ) -> AdapterResult: ...
