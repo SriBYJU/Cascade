@@ -107,6 +107,7 @@ Sidecars: budget manager, exact cache, single-flight, worktree manager, write-se
 | `optimizer models` | Runtime capability profile. |
 | `optimizer cache` | Inspect or clear exact cache. |
 | `optimizer benchmark` | Run reproducible local benchmark fixtures. |
+| `optimizer release-benchmark` | Run the full repeated live, ablation, parallel, savings, and release-evidence bundle. |
 | `optimizer savings` | Show measured token/model-use/time savings from a live benchmark report. |
 | `optimizer release-gate` | Run final engineering and measured-evidence release checks. |
 | `optimizer project-install` | Safely install the Cascade skill and six custom agents into a repository. |
@@ -202,3 +203,16 @@ optimizer release-gate \
 ```
 
 The second form additionally requires a measured 20+ task report with at least three repeats, plain-vs-Cascade matched evidence, source commit, environment/policy metadata, and raw trajectory references. Performance targets are reported separately from hard engineering/safety gates.
+
+
+## One-command release benchmark
+
+On a machine with an authenticated Codex runtime and a real capability-profile file, the final scientific evidence bundle is one command:
+
+```bash
+optimizer release-benchmark \
+  --profiles examples/model-profiles.example.json \
+  --repeats 3
+```
+
+This runs the 23-case live suite across strongest-only, efficient-only, plain Codex, normal Cascade, Context-Firewall ablation, prompt-cache-affinity ablation, and a local tier when configured. It then runs the sequential-vs-parallel live suite, writes raw trajectories, generates `report.json`, `report.md`, `savings.txt`, `savings.json`, `parallel-live.json`, and a final `bundle.json` containing the release-gate result. If the model runtime is unavailable, the command records that state instead of inventing benchmark numbers.

@@ -21,6 +21,7 @@ from .evaluation.report import (
     measured_policy_certificate,
     render_markdown_report,
 )
+from .evaluation.release_bundle import run_release_benchmark
 from .evaluation.savings import render_savings, savings_summary
 from .observability.render import (
     render_plan,
@@ -195,6 +196,26 @@ def build_parser() -> argparse.ArgumentParser:
             "provider-neutral model profile JSON used for strongest, "
             "efficient, local and Cascade routing comparisons"
         ),
+    )
+    p.add_argument(
+        "--effort",
+        choices=[effort.value for effort in ReasoningEffort],
+        default=ReasoningEffort.MEDIUM.value,
+    )
+
+    p = sub.add_parser(
+        "release-benchmark",
+        help="run the full repeated live/ablation/release evidence bundle",
+    )
+    p.add_argument(
+        "--profiles",
+        required=True,
+        help="provider-neutral model profile JSON",
+    )
+    p.add_argument("--repeats", type=int, default=3)
+    p.add_argument(
+        "--output",
+        default=".cascade/release-benchmark",
     )
     p.add_argument(
         "--effort",
@@ -596,6 +617,32 @@ def main(argv: list[str] | None = None) -> int:
             }
         )
         return 0 if report.get("measured") else 2
+    if args.command == "release-benchmark":
+        result = run_release_benchmark(
+            repo,
+            profiles_path=args.profiles,
+            repeats=args.repeats,
+            output_dir=args.output,
+            effort=ReasoningEffort(args.effort),
+        )
+        _print(
+            {
+                "status": result.get("status"),
+                "measured": result.get("measured"),
+                "bundle": str(
+                    (
+                        Path(args.output)
+                        if Path(args.output).is_absolute()
+                        else repo / args.output
+                    )
+                    / "bundle.json"
+                ),
+                "savings": result.get("savings"),
+                "reason": result.get("reason"),
+            }
+        )
+        return 0 if result.get("measured") else 2
+
     if args.command == "savings":
         report_path = repo / args.report
         savings = savings_summary(

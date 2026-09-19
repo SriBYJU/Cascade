@@ -136,3 +136,17 @@ optimizer benchmark --suite live \
 - `cascade` uses the full capability mapping so the router can select different models by trajectory step.
 
 The report records the entire model-pool snapshot. Model names remain configuration data, not hard-coded routing policy.
+
+
+## One-command final evidence bundle
+
+For a release candidate, run:
+
+```bash
+optimizer release-benchmark \
+  --profiles examples/model-profiles.example.json \
+  --repeats 3 \
+  --output .cascade/release-benchmark
+```
+
+The command requires at least three repeats and produces the live controlled-model-pool report, Context Firewall and cache ablations, optional local baseline, sequential-vs-parallel live report, explicit savings summaries, raw trial trajectories, and the release-gate result in one bundle. It requires a real authenticated model runtime and intentionally returns `environment-unavailable` rather than synthetic performance data when that runtime is absent.
