@@ -54,7 +54,7 @@ optimizer benchmark --suite live \
 
 Each trial starts from the same generated git fixture, runs deterministic acceptance commands, records failed runs, and writes a raw JSON trajectory under `raw/`. If Codex is unavailable, the report says `environment-unavailable`; Cascade does not fabricate benchmark numbers.
 
-The live manifest now contains 22 deterministic cases across trivial edits, search, single- and multi-file bugs, features, test repair, migration, frontend behavior, documentation lookup, architecture exploration, security, repository exploration, refactoring, ambiguity, configuration, concurrency, serialization, cache behavior, integration, error handling, API validation, CLI behavior, and data structures. Read-only cases use explicit answer-substring acceptance while write cases use deterministic commands.
+The live manifest now contains 23 deterministic cases across trivial edits, search, single- and multi-file bugs, features, test repair, migration, frontend behavior, documentation lookup, architecture exploration, security, repository exploration, refactoring, ambiguity, configuration, concurrency, serialization, cache behavior, integration, error handling, API validation, CLI behavior, and data structures. Read-only cases use explicit answer-substring acceptance while write cases use deterministic commands.
 
 
 ## Implemented ablations
@@ -102,3 +102,16 @@ The current manifest contains a three-writer disjoint scenario and a mixed read/
 ## Route regret replay
 
 Once a task class has enough admitted objective evidence, `optimizer stats` compares each chosen route with the cheapest capability tier that has met the configured verified-success floor for that task class. Positive regret means over-routing to a stronger tier; negative regret flags a route below the best-known safe tier. The metric remains unavailable until the evidence threshold is met rather than fabricating an oracle from sparse runs.
+
+
+## Reproducibility envelope and benchmark card
+
+Live reports now capture OS/release/machine, Python, Git, Node/npm, Go, Rust/Cargo, adapter version when available, the exact Cascade commit, the active policy-lock digest/version, failed-trial count, per-configuration variance, and relative comparisons against the plain baseline. The harness writes both `report.json` and a human-readable `report.md`.
+
+An existing JSON report can be rendered without rerunning models:
+
+```bash
+optimizer benchmark-card .cascade/benchmarks/live/report.json
+```
+
+Relative deltas remain `n/a` when the baseline denominator is zero. The Markdown card explicitly labels measured results and does not convert targets or estimates into performance claims.
