@@ -11,6 +11,14 @@ from .context.repo_map import build_repo_map
 from .doctor import doctor
 from .evaluation.harness import EvaluationHarness
 from .evaluation.models import load_cases
+from .policy_lock import load_policy, policy_digest, write_proposal
+from .router.learner import AdmittedEvidenceStore
+from .router.policy_compiler import (
+    activate_policy,
+    activation_ready,
+    compile_policy_proposal,
+    policy_diff,
+)
 from .schemas import ReasoningEffort
 from .scheduler.dag import TaskNode
 from .scheduler.executor import ParallelTaskSpec, compile_safe_dag, execute_dag
@@ -152,6 +160,47 @@ def build_parser() -> argparse.ArgumentParser:
         "--effort",
         choices=[effort.value for effort in ReasoningEffort],
         default=ReasoningEffort.MEDIUM.value,
+    )
+
+    policy = sub.add_parser(
+        "policy",
+        help="inspect, propose, diff, or explicitly activate routing policy",
+    )
+    policy_sub = policy.add_subparsers(dest="policy_command", required=True)
+    policy_sub.add_parser("status", help="show active policy and digest")
+
+    pp = policy_sub.add_parser(
+        "propose",
+        help="compile a reviewable policy proposal from admitted evidence",
+    )
+    pp.add_argument("--minimum-samples", type=int, default=20)
+    pp.add_argument("--success-floor", type=float, default=0.95)
+    pp.add_argument("--benchmark-suite", required=True)
+    pp.add_argument("--quality-delta", type=float)
+    pp.add_argument("--weighted-usage-delta", type=float)
+    pp.add_argument(
+        "--output",
+        default=".cascade/policy-proposal.json",
+    )
+
+    pd = policy_sub.add_parser("diff", help="diff proposal against active lock")
+    pd.add_argument(
+        "--proposal",
+        default=".cascade/policy-proposal.json",
+    )
+
+    pa = policy_sub.add_parser(
+        "activate",
+        help="activate an evaluated proposal after exact digest approval",
+    )
+    pa.add_argument(
+        "--proposal",
+        default=".cascade/policy-proposal.json",
+    )
+    pa.add_argument(
+        "--approve-digest",
+        required=True,
+        help="exact proposal digest printed by policy propose/diff",
     )
 
     sub.add_parser(
@@ -367,6 +416,76 @@ def main(argv: list[str] | None = None) -> int:
             }
         )
         return 0 if report.get("measured") else 2
+    if args.command == "policy":
+        active_path = repo / "policy.lock.yaml"
+        current = load_policy(active_path)
+        if args.policy_command == "status":
+            ready, reasons = activation_ready(current)
+            _print(
+                {
+                    "digest": policy_digest(current),
+                    "policy": current.model_dump(mode="json"),
+                    "activation_ready": ready,
+                    "activation_blockers": reasons,
+                }
+            )
+            return 0
+
+        proposal_path = repo / args.proposal if hasattr(args, "proposal") else None
+        if args.policy_command == "propose":
+            store = AdmittedEvidenceStore(runtime.db)
+            candidate = compile_policy_proposal(
+                current,
+                store,
+                minimum_samples=args.minimum_samples,
+                success_floor=args.success_floor,
+                benchmark_suite=args.benchmark_suite,
+                quality_delta=args.quality_delta,
+                weighted_usage_delta=args.weighted_usage_delta,
+            )
+            out = repo / args.output
+            write_proposal(candidate, out)
+            ready, reasons = activation_ready(candidate)
+            _print(
+                {
+                    "output": str(out),
+                    "digest": policy_digest(candidate),
+                    "diff": policy_diff(current, candidate),
+                    "activation_ready": ready,
+                    "activation_blockers": reasons,
+                }
+            )
+            return 0
+
+        if proposal_path is None:
+            raise ValueError("proposal path is required")
+        candidate = load_policy(proposal_path)
+        if args.policy_command == "diff":
+            ready, reasons = activation_ready(candidate)
+            _print(
+                {
+                    "digest": policy_digest(candidate),
+                    "diff": policy_diff(current, candidate),
+                    "activation_ready": ready,
+                    "activation_blockers": reasons,
+                }
+            )
+            return 0
+
+        activated = activate_policy(
+            active_path=active_path,
+            proposal_path=proposal_path,
+            approval_digest=args.approve_digest,
+        )
+        _print(
+            {
+                "status": "activated",
+                "digest": policy_digest(activated),
+                "version": activated.version,
+            }
+        )
+        return 0
+
     if args.command == "cleanup":
         manager = WorktreeManager(repo)
         manager.prune()

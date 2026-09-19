@@ -21,6 +21,7 @@ from .context.repo_map import build_repo_map, repository_fingerprint
 from .context.retrieval import collect_evidence, estimate_context_tokens
 from .router.capability_registry import CapabilityRegistry
 from .router.classifier import classify_step
+from .router.learner import AdmittedEvidenceStore
 from .router.router import Router
 from .schemas import (
     BudgetReservation,
@@ -94,6 +95,7 @@ class CascadeRuntime:
         )
         self.registry = CapabilityRegistry(self.config.capability_map)
         self.router = Router(self.registry, self.budgets)
+        self.admitted_evidence = AdmittedEvidenceStore(self.db)
         self.codex: ModelAdapter = CodexAdapter()
         self.ollama = OllamaAdapter()
         self.vllm = VLLMAdapter()
@@ -566,6 +568,17 @@ BOUNDED EVIDENCE
             "deterministic",
             payload=validation.model_dump(mode="json"),
         )
+        self.admitted_evidence.admit(
+            task_class=planned.route.step_type.value,
+            capability=planned.route.capability.value,
+            success=validation.passed,
+            evaluator="approved-objective",
+            metrics={
+                "checks": len(validation.checks),
+                "unexpected_files": len(validation.unexpected_files),
+                "route_utility": planned.route.utility,
+            },
+        )
         self.budgets.release(planned.task_id)
         return {
             **planned.to_dict(),
@@ -711,6 +724,18 @@ BOUNDED EVIDENCE
                             ),
                             "changed_files": gate.changed_files,
                             "unexpected_files": gate.unexpected_files,
+                        },
+                    )
+                    self.admitted_evidence.admit(
+                        task_class=current.route.step_type.value,
+                        capability=current.route.capability.value,
+                        success=gate.passed,
+                        evaluator="approved-objective",
+                        metrics={
+                            "attempt": attempt,
+                            "checks": len(gate.validation.checks),
+                            "unexpected_files": len(gate.unexpected_files),
+                            "route_utility": current.route.utility,
                         },
                     )
                     if gate.unexpected_files:
