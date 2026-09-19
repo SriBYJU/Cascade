@@ -44,3 +44,8 @@ The default `trace_content: "metadata_only"` mode now enforces redaction before 
 ## Local-only cloud boundary
 
 When `local_mode=true` and `cloud_fallback=false`, Cascade now fails closed instead of returning the Codex/cloud adapter for capabilities that the prompt-only local adapters cannot safely execute. QUICK/EXPLORE may use an available Ollama/vLLM endpoint; writer and higher-risk routes are blocked unless a concrete safe local execution path is configured. This prevents the privacy-mode configuration from silently sending work to cloud inference.
+
+
+## Repository symlink boundary
+
+Repository files are attacker-controlled data. Cascade refuses to index, retrieve, render into model context, or secret-scan paths that are symlinks, traverse `..`, resolve outside the repository root, or cross a symlinked directory. This prevents a malicious checkout from redirecting Context Firewall reads into files outside the project.
