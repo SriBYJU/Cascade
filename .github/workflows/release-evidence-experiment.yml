@@ -1,0 +1,210 @@
+name: Release Evidence Experiment
+
+on:
+  push:
+    branches: ["benchmark/release-evidence"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      CODEX_HOME: ${{ runner.temp }}/codex-home
+      CASCADE_MAX_WORKERS: "3"
+
+    steps:
+      - name: Check out exact release candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 072866d609ba88ec36e9c6c2f226cd52212c4466
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "26"
+
+      - name: Install Cascade and current stable Codex CLI
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          npm install -g @openai/codex --no-audit --no-fund
+          codex --version
+          optimizer --help >/dev/null
+
+      - name: Select authenticated Codex credential
+        env:
+          CODEX_API_KEY_SECRET: ${{ secrets.CODEX_API_KEY }}
+          OPENAI_API_KEY_SECRET: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -n "${CODEX_API_KEY_SECRET:-}" ]; then
+            printf 'CODEX_API_KEY=%s\n' "$CODEX_API_KEY_SECRET" >> "$GITHUB_ENV"
+            echo "Using configured CODEX_API_KEY secret."
+          elif [ -n "${OPENAI_API_KEY_SECRET:-}" ]; then
+            printf 'CODEX_API_KEY=%s\n' "$OPENAI_API_KEY_SECRET" >> "$GITHUB_ENV"
+            echo "Using configured OPENAI_API_KEY secret through CODEX_API_KEY."
+          else
+            echo "::error::No CODEX_API_KEY or OPENAI_API_KEY repository secret is configured."
+            exit 78
+          fi
+
+      - name: Write dated real model profile
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/openai-release-model-profiles.json" <<'JSON'
+          [
+            {
+              "model_id": "gpt-5.6-luna",
+              "capability": "quick",
+              "reasoning_efforts": ["low", "medium"],
+              "local": false,
+              "available": true,
+              "cost_weight": 0.05,
+              "latency_weight": 0.35
+            },
+            {
+              "model_id": "gpt-5.6-luna",
+              "capability": "explore",
+              "reasoning_efforts": ["low", "medium"],
+              "local": false,
+              "available": true,
+              "cost_weight": 0.05,
+              "latency_weight": 0.35
+            },
+            {
+              "model_id": "gpt-5.6-terra",
+              "capability": "build",
+              "reasoning_efforts": ["low", "medium", "high"],
+              "local": false,
+              "available": true,
+              "cost_weight": 0.5,
+              "latency_weight": 0.75
+            },
+            {
+              "model_id": "gpt-5.6-terra",
+              "capability": "debug",
+              "reasoning_efforts": ["medium", "high", "xhigh"],
+              "local": false,
+              "available": true,
+              "cost_weight": 0.5,
+              "latency_weight": 0.8
+            },
+            {
+              "model_id": "gpt-5.6-sol",
+              "capability": "deep",
+              "reasoning_efforts": ["medium", "high", "xhigh"],
+              "local": false,
+              "available": true,
+              "cost_weight": 1.0,
+              "latency_weight": 1.15
+            },
+            {
+              "model_id": "gpt-5.6-sol",
+              "capability": "critical",
+              "reasoning_efforts": ["high", "xhigh", "max"],
+              "local": false,
+              "available": true,
+              "cost_weight": 1.0,
+              "latency_weight": 1.25
+            }
+          ]
+          JSON
+
+      - name: Probe every benchmark model before the full run
+        run: |
+          set -euo pipefail
+          mkdir -p .cascade/release-benchmark/probes
+          for model in gpt-5.6-luna gpt-5.6-terra gpt-5.6-sol; do
+            echo "Probing $model"
+            codex exec \
+              --ephemeral \
+              --ignore-user-config \
+              --json \
+              --sandbox read-only \
+              --model "$model" \
+              --config 'model_reasoning_effort="medium"' \
+              "Reply with exactly OK and do not use tools." \
+              > ".cascade/release-benchmark/probes/$model.jsonl"
+          done
+
+      - name: Capture preflight environment
+        run: |
+          set -euo pipefail
+          optimizer doctor > .cascade/release-benchmark/doctor.json
+          {
+            echo "source_commit=$(git rev-parse HEAD)"
+            echo "codex_version=$(codex --version)"
+            echo "python_version=$(python --version 2>&1)"
+            echo "node_version=$(node --version)"
+            echo "run_id=$GITHUB_RUN_ID"
+          } > .cascade/release-benchmark/run-info.txt
+          cp "$RUNNER_TEMP/openai-release-model-profiles.json" .cascade/release-benchmark/model-profiles.json
+
+      - name: Run authenticated 23-case x 3-repeat release experiment
+        run: |
+          set -euo pipefail
+          optimizer release-benchmark \
+            --profiles "$RUNNER_TEMP/openai-release-model-profiles.json" \
+            --repeats 3 \
+            --output .cascade/release-benchmark
+
+      - name: Run evidence-backed final gate
+        run: |
+          set -euo pipefail
+          optimizer release-gate \
+            --benchmark-report .cascade/release-benchmark/live/report.json \
+            --parallel-report .cascade/release-benchmark/parallel-live.json \
+            | tee .cascade/release-benchmark/release-gate.txt
+
+      - name: Verify measured evidence bundle
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path(".cascade/release-benchmark")
+          bundle = json.loads((root / "bundle.json").read_text())
+          savings = json.loads((root / "live" / "savings.json").read_text())
+
+          assert bundle.get("measured") is True, bundle
+          gate = bundle.get("release_gate") or {}
+          assert gate.get("measured_release_evidence") is True, gate
+
+          print("MEASURED RELEASE EVIDENCE: YES")
+          print("PUBLIC CLAIM ELIGIBLE:", savings.get("public_claim_eligible"))
+          print((root / "live" / "savings.txt").read_text())
+          PY
+
+      - name: Add measured result to job summary
+        if: success()
+        run: |
+          {
+            echo "## Cascade measured release experiment"
+            echo
+            cat .cascade/release-benchmark/live/savings.txt
+            echo
+            cat .cascade/release-benchmark/release-gate.txt
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload complete release evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cascade-release-evidence-${{ github.run_id }}
+          path: .cascade/release-benchmark
+          if-no-files-found: warn
+          retention-days: 30
