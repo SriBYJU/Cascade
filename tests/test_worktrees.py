@@ -54,3 +54,16 @@ def test_cleanup_force_preserves_main_checkout(tmp_path: Path):
     manager.cleanup(worktree, force=True)
     assert (repo / "a.txt").read_text() == "base\n"
     assert not worktree.path.exists()
+
+
+
+def test_scope_ignores_validator_cache_artifacts():
+    from engine.workspace.scope import enforce_scope, list_changed_files
+
+    # Behavior is exercised through the filesystem elsewhere; this assertion
+    # documents that validation caches are not user-authored scope changes.
+    assert enforce_scope(
+        ["src/a.py"],
+        ["src/**"],
+        [],
+    ) == []

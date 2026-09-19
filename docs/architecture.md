@@ -45,3 +45,8 @@ After deterministic validation succeeds, HIGH and CRITICAL write tasks now enter
 ## Architect preflight for ambiguous/critical writes
 
 Ambiguous write tasks and CRITICAL writes now invoke a separate read-only architect before any worktree writer starts. The architect receives the bounded Task Envelope and Context Firewall evidence, resolves the cross-cutting decision into structured constraints, and those constraints are injected into the writer envelope. A failed or malformed required preflight blocks the task instead of letting a builder guess. Resume checkpoints preserve the architect decision so it is not repeatedly re-spent after interruption.
+
+
+## Project-aware validator discovery
+
+Validator discovery no longer treats whatever tools happen to be installed in the caller's environment as project policy. Ruff and mypy run only when the repository declares their configuration; pytest runs when tests/configuration are present; compiler/parser checks remain deterministic defaults. Validation cache artifacts such as `.pytest_cache`, `__pycache__`, mypy/ruff caches, and coverage output are excluded from write-scope accounting so a failed first validation attempt cannot poison the next merge gate.

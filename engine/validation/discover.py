@@ -33,29 +33,133 @@ def _package_scripts(root: Path) -> dict[str, str]:
     }
 
 
+def _pyproject_has_tool(root: Path, tool: str) -> bool:
+    path = root / "pyproject.toml"
+    if not path.exists():
+        return False
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return False
+    return f"[tool.{tool}]" in text or f"[tool.{tool}." in text
+
+
+def _uses_pytest(root: Path) -> bool:
+    return (
+        (root / "tests").is_dir()
+        or (root / "pytest.ini").exists()
+        or (root / "tox.ini").exists()
+        or _pyproject_has_tool(root, "pytest")
+    )
+
+
+def _uses_ruff(root: Path) -> bool:
+    return (
+        (root / "ruff.toml").exists()
+        or (root / ".ruff.toml").exists()
+        or _pyproject_has_tool(root, "ruff")
+    )
+
+
+def _uses_mypy(root: Path) -> bool:
+    return (
+        (root / "mypy.ini").exists()
+        or (root / ".mypy.ini").exists()
+        or _pyproject_has_tool(root, "mypy")
+    )
+
+
 def discover_validators(root: str | Path) -> list[ValidatorSpec]:
     root = Path(root)
     specs: list[ValidatorSpec] = []
-    if (root / "pyproject.toml").exists() or (root / "setup.py").exists() or (root / "setup.cfg").exists():
+    python_project = (
+        (root / "pyproject.toml").exists()
+        or (root / "setup.py").exists()
+        or (root / "setup.cfg").exists()
+    )
+    if python_project:
         if shutil.which("python"):
-            specs.append(ValidatorSpec("python-compile", ("python", "-m", "compileall", "-q", "."), "parser"))
-        if shutil.which("pytest") or shutil.which("python"):
-            specs.append(ValidatorSpec("pytest", ("python", "-m", "pytest", "-q"), "tests"))
-        if shutil.which("ruff"):
-            specs.append(ValidatorSpec("ruff", ("ruff", "check", "."), "lint"))
-        if shutil.which("mypy"):
-            specs.append(ValidatorSpec("mypy", ("mypy", "engine"), "types"))
+            specs.append(
+                ValidatorSpec(
+                    "python-compile",
+                    ("python", "-m", "compileall", "-q", "."),
+                    "parser",
+                )
+            )
+        if _uses_pytest(root) and shutil.which("python"):
+            specs.append(
+                ValidatorSpec(
+                    "pytest",
+                    ("python", "-m", "pytest", "-q"),
+                    "tests",
+                )
+            )
+        if _uses_ruff(root) and shutil.which("ruff"):
+            specs.append(
+                ValidatorSpec(
+                    "ruff",
+                    ("ruff", "check", "."),
+                    "lint",
+                )
+            )
+        if _uses_mypy(root) and shutil.which("mypy"):
+            specs.append(
+                ValidatorSpec(
+                    "mypy",
+                    ("mypy", "."),
+                    "types",
+                )
+            )
+
     scripts = _package_scripts(root)
-    package_manager = "pnpm" if (root / "pnpm-lock.yaml").exists() and shutil.which("pnpm") else "npm"
+    package_manager = (
+        "pnpm"
+        if (root / "pnpm-lock.yaml").exists()
+        and shutil.which("pnpm")
+        else "npm"
+    )
     if (root / "package.json").exists() and shutil.which(package_manager):
-        for script, category in (("test", "tests"), ("lint", "lint"), ("typecheck", "types"), ("check", "types")):
+        for script, category in (
+            ("test", "tests"),
+            ("lint", "lint"),
+            ("typecheck", "types"),
+            ("check", "types"),
+        ):
             if script in scripts:
-                specs.append(ValidatorSpec(f"js-{script}", (package_manager, "run", script, "--if-present") if package_manager == "npm" else (package_manager, script), category))
+                command = (
+                    (package_manager, "run", script, "--if-present")
+                    if package_manager == "npm"
+                    else (package_manager, script)
+                )
+                specs.append(
+                    ValidatorSpec(
+                        f"js-{script}",
+                        command,
+                        category,
+                    )
+                )
+
     if (root / "Cargo.toml").exists() and shutil.which("cargo"):
-        specs.extend([
-            ValidatorSpec("cargo-check", ("cargo", "check", "--quiet"), "types"),
-            ValidatorSpec("cargo-test", ("cargo", "test", "--quiet"), "tests"),
-        ])
+        specs.extend(
+            [
+                ValidatorSpec(
+                    "cargo-check",
+                    ("cargo", "check", "--quiet"),
+                    "types",
+                ),
+                ValidatorSpec(
+                    "cargo-test",
+                    ("cargo", "test", "--quiet"),
+                    "tests",
+                ),
+            ]
+        )
     if (root / "go.mod").exists() and shutil.which("go"):
-        specs.append(ValidatorSpec("go-test", ("go", "test", "./..."), "tests"))
+        specs.append(
+            ValidatorSpec(
+                "go-test",
+                ("go", "test", "./..."),
+                "tests",
+            )
+        )
     return specs
