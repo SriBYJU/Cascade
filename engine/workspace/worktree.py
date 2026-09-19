@@ -21,7 +21,13 @@ class WorktreeManager:
     def __init__(self, repo_root: str | Path, *, state_dir: str | Path | None = None):
         self.repo_root = Path(repo_root).resolve()
         self.state_dir = Path(state_dir).resolve() if state_dir else self.repo_root / ".cascade"
-        self.worktrees_dir = self.state_dir / "worktrees"
+        if self.state_dir.is_relative_to(self.repo_root):
+            self.worktrees_dir = (
+                self.repo_root.parent
+                / f".{self.repo_root.name}.cascade-worktrees"
+            )
+        else:
+            self.worktrees_dir = self.state_dir / "worktrees"
         self.worktrees_dir.mkdir(parents=True, exist_ok=True)
 
     @staticmethod

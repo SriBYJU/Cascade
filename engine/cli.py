@@ -9,6 +9,9 @@ from .benchmarks import BenchmarkRunner
 from .config import CascadeConfig
 from .context.repo_map import build_repo_map
 from .doctor import doctor
+from .evaluation.harness import EvaluationHarness
+from .evaluation.models import load_cases
+from .schemas import ReasoningEffort
 from .scheduler.dag import TaskNode
 from .scheduler.executor import ParallelTaskSpec, compile_safe_dag, execute_dag
 from .runtime import CascadeRuntime
@@ -128,10 +131,27 @@ def build_parser() -> argparse.ArgumentParser:
         "benchmark",
         help="run reproducible local benchmark fixtures",
     )
-    p.add_argument("--suite", default="micro", choices=["micro"])
+    p.add_argument("--suite", default="micro", choices=["micro", "live"])
     p.add_argument(
         "--output",
         default=".cascade/benchmarks/latest.json",
+    )
+    p.add_argument(
+        "--manifest",
+        default="benchmarks/fixtures/live_tasks.json",
+        help="live benchmark manifest",
+    )
+    p.add_argument(
+        "--configs",
+        default="plain,cascade",
+        help="comma-separated live configs",
+    )
+    p.add_argument("--repeats", type=int, default=1)
+    p.add_argument("--model", default="auto")
+    p.add_argument(
+        "--effort",
+        choices=[effort.value for effort in ReasoningEffort],
+        default=ReasoningEffort.MEDIUM.value,
     )
 
     sub.add_parser(
@@ -306,13 +326,47 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0 if ok else 1
     if args.command == "benchmark":
-        runner = BenchmarkRunner(repo)
-        result = runner.run_micro()
-        out = repo / args.output
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(result, indent=2, sort_keys=True))
-        _print({"output": str(out), **result["summary"]})
-        return 0 if result["summary"]["failures"] == 0 else 1
+        if args.suite == "micro":
+            runner = BenchmarkRunner(repo)
+            result = runner.run_micro()
+            out = repo / args.output
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(json.dumps(result, indent=2, sort_keys=True))
+            _print({"output": str(out), **result["summary"]})
+            return 0 if result["summary"]["failures"] == 0 else 1
+
+        manifest = repo / args.manifest
+        cases = load_cases(manifest)
+        configs = [
+            item.strip()
+            for item in args.configs.split(",")
+            if item.strip()
+        ]
+        output_arg = Path(args.output)
+        live_dir = (
+            output_arg
+            if output_arg.suffix == ""
+            else output_arg.parent / output_arg.stem
+        )
+        harness = EvaluationHarness(repo)
+        report = harness.run(
+            cases,
+            configs=configs,
+            repeats=args.repeats,
+            output_dir=live_dir,
+            model=args.model,
+            effort=ReasoningEffort(args.effort),
+        )
+        _print(
+            {
+                "output": str(live_dir / "report.json"),
+                "measured": report.get("measured"),
+                "status": report.get("status"),
+                "summary": report.get("summary"),
+                "reason": report.get("reason"),
+            }
+        )
+        return 0 if report.get("measured") else 2
     if args.command == "cleanup":
         manager = WorktreeManager(repo)
         manager.prune()

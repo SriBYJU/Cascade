@@ -1,0 +1,92 @@
+[
+  {
+    "id": "live-trivial-rename",
+    "category": "trivial-edit",
+    "task": "Rename the misspelled function caculate_total to calculate_total in calc.py and update its call site. Preserve behavior and make the tests pass.",
+    "risk": "low",
+    "write": [
+      "calc.py"
+    ],
+    "files": {
+      "pyproject.toml": "[project]\\nname = \"cascade-bench-fixture\"\\nversion = \"0.0.0\"\\n[tool.pytest.ini_options]\\ntestpaths = [\"tests\"]\\n",
+      "calc.py": "def caculate_total(values):\\n    return sum(values)\\n\\n\\ndef invoice(values):\\n    return caculate_total(values)\\n",
+      "tests/test_calc.py": "from calc import calculate_total, invoice\\n\\n\\ndef test_total():\\n    assert calculate_total([1, 2, 3]) == 6\\n    assert invoice([4, 5]) == 9\\n"
+    },
+    "acceptance": [
+      [
+        "python",
+        "-m",
+        "pytest",
+        "-q"
+      ]
+    ]
+  },
+  {
+    "id": "live-pagination-bug",
+    "category": "single-file-bug",
+    "task": "Fix the off-by-one pagination bug in pagination.py. Pages are 1-indexed. Keep the public function signature unchanged.",
+    "risk": "low",
+    "write": [
+      "pagination.py"
+    ],
+    "files": {
+      "pyproject.toml": "[project]\\nname = \"cascade-bench-fixture\"\\nversion = \"0.0.0\"\\n[tool.pytest.ini_options]\\ntestpaths = [\"tests\"]\\n",
+      "pagination.py": "def paginate(items, page, size):\\n    start = page * size\\n    return items[start:start + size]\\n",
+      "tests/test_pagination.py": "from pagination import paginate\\n\\n\\ndef test_pages_are_one_indexed():\\n    items = list(range(10))\\n    assert paginate(items, 1, 3) == [0, 1, 2]\\n    assert paginate(items, 2, 3) == [3, 4, 5]\\n"
+    },
+    "acceptance": [
+      [
+        "python",
+        "-m",
+        "pytest",
+        "-q"
+      ]
+    ]
+  },
+  {
+    "id": "live-auth-permission",
+    "category": "security",
+    "task": "Fix the authorization bug in permissions.py. Only an admin or the resource owner may delete the resource. Do not broaden permissions.",
+    "risk": "high",
+    "write": [
+      "permissions.py"
+    ],
+    "files": {
+      "pyproject.toml": "[project]\\nname = \"cascade-bench-fixture\"\\nversion = \"0.0.0\"\\n[tool.pytest.ini_options]\\ntestpaths = [\"tests\"]\\n",
+      "permissions.py": "def can_delete(user_id, owner_id, role):\\n    return role == \"admin\" or user_id != owner_id\\n",
+      "tests/test_permissions.py": "from permissions import can_delete\\n\\n\\ndef test_delete_policy():\\n    assert can_delete(\"u1\", \"u1\", \"member\") is True\\n    assert can_delete(\"u2\", \"u1\", \"member\") is False\\n    assert can_delete(\"u2\", \"u1\", \"admin\") is True\\n"
+    },
+    "acceptance": [
+      [
+        "python",
+        "-m",
+        "pytest",
+        "-q"
+      ]
+    ]
+  },
+  {
+    "id": "live-multifile-bug",
+    "category": "multi-file-bug",
+    "task": "Fix the greeting flow so service.greet uses the shared normalize_name helper and returns 'Hello, Ada Lovelace!'. Keep normalization centralized rather than duplicating it.",
+    "risk": "medium",
+    "write": [
+      "normalize.py",
+      "service.py"
+    ],
+    "files": {
+      "pyproject.toml": "[project]\\nname = \"cascade-bench-fixture\"\\nversion = \"0.0.0\"\\n[tool.pytest.ini_options]\\ntestpaths = [\"tests\"]\\n",
+      "normalize.py": "def normalize_name(name):\\n    return name.strip().lower()\\n",
+      "service.py": "from normalize import normalize_name\\n\\n\\ndef greet(name):\\n    cleaned = name.strip()\\n    return f\"Hello, {cleaned}!\"\\n",
+      "tests/test_service.py": "from service import greet\\n\\n\\ndef test_greeting_uses_shared_normalization():\\n    assert greet(\"  ada LOVELACE \") == \"Hello, Ada Lovelace!\"\\n"
+    },
+    "acceptance": [
+      [
+        "python",
+        "-m",
+        "pytest",
+        "-q"
+      ]
+    ]
+  }
+]

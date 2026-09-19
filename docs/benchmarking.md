@@ -38,3 +38,20 @@ Reliability: resume success, idempotent replay, merge conflicts, circuit trips.
 ## Scientific-report rule
 
 For non-deterministic agent tasks, run repeated trials and report variance. Publish raw traces, exact commits, policy lock, environment metadata, and failed runs. Label every number as measured, estimated, or target.
+
+
+## Live A/B harness
+
+The live harness holds the generated fixture, task, acceptance commands, and model selection constant while comparing plain Codex with Cascade.
+
+```bash
+optimizer benchmark --suite live \
+  --configs plain,cascade \
+  --repeats 3 \
+  --manifest benchmarks/fixtures/live_tasks.json \
+  --output .cascade/benchmarks/live
+```
+
+Each trial starts from the same generated git fixture, runs deterministic acceptance commands, records failed runs, and writes a raw JSON trajectory under `raw/`. If Codex is unavailable, the report says `environment-unavailable`; Cascade does not fabricate benchmark numbers.
+
+The first live manifest covers trivial edit, single-file bug, security/authorization, and multi-file dependency work. It is an initial A/B suite, not yet the full Phase 8 scientific benchmark.

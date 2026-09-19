@@ -38,3 +38,9 @@ def test_two_writers_get_isolated_worktrees(tmp_path: Path):
 def test_forbidden_path_scope_is_blocked():
     unexpected = enforce_scope(["src/a.py", "migrations/001.sql"], ["src/**"], ["migrations/**"])
     assert unexpected == ["migrations/001.sql"]
+
+
+def test_default_worktrees_live_outside_checkout(tmp_path: Path):
+    repo = _repo(tmp_path)
+    manager = WorktreeManager(repo)
+    assert not manager.worktrees_dir.is_relative_to(repo)
