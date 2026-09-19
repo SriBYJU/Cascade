@@ -9,6 +9,9 @@ from engine.schemas import ReasoningEffort
 class FakeEditingAdapter:
     name = "fake"
 
+    def __init__(self) -> None:
+        self.sandbox_modes: list[str] = []
+
     def available(self) -> bool:
         return True
 
@@ -22,7 +25,8 @@ class FakeEditingAdapter:
         timeout_seconds: int = 900,
         sandbox_mode: str = "read-only",
     ) -> AdapterResult:
-        del prompt, model, effort, timeout_seconds, sandbox_mode
+        del prompt, model, effort, timeout_seconds
+        self.sandbox_modes.append(sandbox_mode)
         Path(cwd, "value.py").write_text("VALUE = 2\n")
         return AdapterResult(
             True,
@@ -76,7 +80,8 @@ def test_plain_harness_records_measured_trial(tmp_path: Path):
             ]
         ],
     )
-    harness = EvaluationHarness(tmp_path, adapter=FakeEditingAdapter())
+    adapter = FakeEditingAdapter()
+    harness = EvaluationHarness(tmp_path, adapter=adapter)
     report = harness.run(
         [case],
         configs=["plain"],
@@ -89,6 +94,7 @@ def test_plain_harness_records_measured_trial(tmp_path: Path):
     assert all(item["verified_success"] for item in trials)
     assert report["summary"]["plain"]["total_model_tokens_mean"] == 120
     assert report["summary"]["plain"]["cached_input_tokens_mean"] == 40
+    assert adapter.sandbox_modes == ["workspace-write", "workspace-write"]
 
 
 def test_aggregate_trials_empty():
@@ -115,3 +121,44 @@ def test_answer_acceptance_supports_read_only_tasks(tmp_path: Path):
     )
     assert passed is True
     assert checks[0]["kind"] == "answer_contains"
+
+
+
+def test_plain_read_only_trial_uses_read_only_sandbox(tmp_path: Path):
+    class ReadOnlyAdapter(FakeEditingAdapter):
+        def run(
+            self,
+            prompt: str,
+            *,
+            cwd: str,
+            model: str = "auto",
+            effort: ReasoningEffort = ReasoningEffort.MEDIUM,
+            timeout_seconds: int = 900,
+            sandbox_mode: str = "read-only",
+        ) -> AdapterResult:
+            del prompt, cwd, model, effort, timeout_seconds
+            self.sandbox_modes.append(sandbox_mode)
+            return AdapterResult(
+                True,
+                "The setting is in config.py",
+                usage={"input_tokens": 10, "output_tokens": 5},
+            )
+
+    case = BenchmarkCase(
+        case_id="search",
+        category="search",
+        task="find config",
+        files={"config.py": "VALUE = 1\n"},
+        write_paths=[],
+        acceptance=[],
+        answer_contains=["config.py"],
+    )
+    adapter = ReadOnlyAdapter()
+    report = EvaluationHarness(tmp_path, adapter=adapter).run(
+        [case],
+        configs=["plain"],
+        repeats=1,
+        output_dir=tmp_path / "readonly",
+    )
+    assert report["trials"][0]["verified_success"] is True
+    assert adapter.sandbox_modes == ["read-only"]

@@ -137,6 +137,11 @@ class EvaluationHarness:
                     cwd=str(root),
                     model=model,
                     effort=effort,
+                    sandbox_mode=(
+                        "workspace-write"
+                        if case.write_paths
+                        else "read-only"
+                    ),
                 )
                 accepted, checks = self._accept(
                     root,
@@ -311,9 +316,9 @@ class EvaluationHarness:
                 wall = int((time.monotonic() - started) * 1000)
                 trace = self._write_trace(
                     output_dir,
-                    f"{case.case_id}-cascade-r{repeat}",
+                    f"{case.case_id}-{config}-r{repeat}",
                     {
-                        "configuration": "cascade",
+                        "configuration": config,
                         "case": case.case_id,
                         "repeat": repeat,
                         "source_commit": self._source_commit(),
@@ -324,7 +329,7 @@ class EvaluationHarness:
                 return TrialResult(
                     case_id=case.case_id,
                     category=case.category,
-                    config="cascade",
+                    config=config,
                     repeat=repeat,
                     verified_success=False,
                     failure_kind="harness",
