@@ -38,4 +38,3 @@ def test_python_validation_fails_syntax(tmp_path: Path):
     (tmp_path / "bad.py").write_text("def broken(:\n")
     result = validate_progressively(tmp_path, risk="low", changed_files=["bad.py"])
     assert not result.passed
-

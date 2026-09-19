@@ -87,4 +87,3 @@ def test_project_config_enables_ruff_and_mypy(
     commands = _commands(tmp_path)
     assert ("ruff", "check", ".") in commands
     assert ("mypy", ".") in commands
-

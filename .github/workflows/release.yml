@@ -26,4 +26,3 @@ jobs:
         with:
           subject-path: 'dist/*'
       - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1 pinned 2026-09-19
-

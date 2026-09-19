@@ -81,4 +81,3 @@ def run_command(
             timed_out=True,
             truncated=trunc1 or trunc2,
         )
-

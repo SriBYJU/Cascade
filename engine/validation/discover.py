@@ -297,4 +297,3 @@ def discover_validators(root: str | Path) -> list[ValidatorSpec]:
             )
         )
     return specs
-
