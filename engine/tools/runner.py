@@ -23,11 +23,12 @@ def run_command(
     timeout_seconds: float = 120,
     output_cap_chars: int = 20000,
     env: Mapping[str, str] | None = None,
+    inherit_env: bool = True,
 ) -> CommandResult:
     if not command:
         raise ValueError("command must not be empty")
     start = time.monotonic()
-    merged_env = os.environ.copy()
+    merged_env = os.environ.copy() if inherit_env else {}
     if env:
         merged_env.update(env)
     try:
