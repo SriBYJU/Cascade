@@ -68,6 +68,7 @@ class TrialResult:
     worker_output_tokens: int = 0
     cached_input_tokens: int = 0
     total_model_tokens: int = 0
+    weighted_usage: float = 0.0
     retries: int = 0
     escalations: int = 0
     raw_trace: str | None = None
@@ -104,6 +105,7 @@ def aggregate_trials(trials: list[TrialResult]) -> dict[str, Any]:
         wall = [float(item.wall_time_ms) for item in items]
         total_tokens = [float(item.total_model_tokens) for item in items]
         cached = [float(item.cached_input_tokens) for item in items]
+        weighted = [float(item.weighted_usage) for item in items]
         successes = sum(1 for item in items if item.verified_success)
         result[config] = {
             "trials": len(items),
@@ -116,6 +118,10 @@ def aggregate_trials(trials: list[TrialResult]) -> dict[str, Any]:
             else 0.0,
             "total_model_tokens_stdev": _stdev(total_tokens),
             "cached_input_tokens_mean": statistics.mean(cached) if cached else 0.0,
+            "weighted_usage_mean": statistics.mean(weighted)
+            if weighted
+            else 0.0,
+            "weighted_usage_stdev": _stdev(weighted),
             "retries_total": sum(item.retries for item in items),
             "escalations_total": sum(item.escalations for item in items),
             "failure_kinds": {

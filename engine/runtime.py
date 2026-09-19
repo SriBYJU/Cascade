@@ -1094,6 +1094,7 @@ BOUNDED EVIDENCE
             "retries": 0,
             "escalations": 0,
             "deterministic_events": 0,
+            "weighted_usage": 0.0,
         }
         for event in events:
             if event.event == "route_selected":
@@ -1115,18 +1116,33 @@ BOUNDED EVIDENCE
                     event.metrics.get("output_tokens", 0)
                 )
             elif event.actor != "deterministic":
-                totals["worker_input_tokens"] += int(
-                    event.metrics.get("input_tokens", 0)
+                worker_input = int(event.metrics.get("input_tokens", 0))
+                worker_output = int(event.metrics.get("output_tokens", 0))
+                totals["worker_input_tokens"] += worker_input
+                totals["worker_output_tokens"] += worker_output
+                capability_name = event.payload.get("capability")
+                capability_weights = {
+                    "quick": 0.20,
+                    "explore": 0.25,
+                    "build": 0.50,
+                    "debug": 0.70,
+                    "deep": 0.85,
+                    "critical": 1.00,
+                }
+                weight = capability_weights.get(
+                    str(capability_name),
+                    1.0,
                 )
-                totals["worker_output_tokens"] += int(
-                    event.metrics.get("output_tokens", 0)
-                )
+                totals["weighted_usage"] += (
+                    worker_input + worker_output
+                ) * weight
             totals["cached_input_tokens"] += int(
                 event.metrics.get("cached_input_tokens", 0)
             )
         totals["head_tokens"] = (
             totals["head_input_tokens"] + totals["head_output_tokens"]
         )
+        totals["weighted_usage"] += totals["head_tokens"]
         totals["total_model_tokens"] = (
             totals["head_tokens"]
             + totals["worker_input_tokens"]

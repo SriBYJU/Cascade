@@ -102,6 +102,7 @@ def render_stats(stats: dict[str, Any]) -> str:
         f"HEAD MODEL TOKENS: {head}",
         f"WORKER MODEL TOKENS: {worker}",
         f"TOTAL MODEL TOKENS: {total}",
+        f"WEIGHTED USAGE: {float(stats.get('weighted_usage', 0.0)):.2f}",
         f"CACHED INPUT TOKENS: {cached}",
         f"ROUTES: {int(stats.get('routes', 0))}",
         f"RETRIES: {int(stats.get('retries', 0))}",

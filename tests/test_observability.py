@@ -61,6 +61,7 @@ def test_stats_renderer_reports_head_and_total():
             "worker_output_tokens": 5,
             "total_model_tokens": 35,
             "cached_input_tokens": 4,
+            "weighted_usage": 17.5,
             "routes": 1,
             "retries": 0,
             "escalations": 0,
@@ -70,6 +71,7 @@ def test_stats_renderer_reports_head_and_total():
     )
     assert "HEAD MODEL TOKENS: 10" in text
     assert "TOTAL MODEL TOKENS: 35" in text
+    assert "WEIGHTED USAGE: 17.50" in text
     assert "EXACT CACHE: 2 entries / 3 hits" in text
 
 

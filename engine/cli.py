@@ -11,6 +11,7 @@ from .context.repo_map import build_repo_map
 from .doctor import doctor
 from .evaluation.harness import EvaluationHarness
 from .evaluation.models import load_cases
+from .evaluation.report import load_report, measured_policy_certificate
 from .observability.render import (
     render_plan,
     render_stats,
@@ -186,9 +187,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pp.add_argument("--minimum-samples", type=int, default=20)
     pp.add_argument("--success-floor", type=float, default=0.95)
-    pp.add_argument("--benchmark-suite", required=True)
+    pp.add_argument("--benchmark-suite")
     pp.add_argument("--quality-delta", type=float)
     pp.add_argument("--weighted-usage-delta", type=float)
+    pp.add_argument(
+        "--from-report",
+        help="derive the certificate from a measured live benchmark report",
+    )
     pp.add_argument(
         "--output",
         default=".cascade/policy-proposal.json",
@@ -460,14 +465,27 @@ def main(argv: list[str] | None = None) -> int:
         proposal_path = repo / args.proposal if hasattr(args, "proposal") else None
         if args.policy_command == "propose":
             store = AdmittedEvidenceStore(runtime.db)
+            benchmark_suite = args.benchmark_suite
+            quality_delta = args.quality_delta
+            weighted_usage_delta = args.weighted_usage_delta
+            if args.from_report:
+                report = load_report(repo / args.from_report)
+                certificate = measured_policy_certificate(report)
+                benchmark_suite = certificate.benchmark_suite
+                quality_delta = certificate.quality_delta
+                weighted_usage_delta = certificate.weighted_usage_delta
+            if not benchmark_suite:
+                raise ValueError(
+                    "--benchmark-suite or --from-report is required"
+                )
             candidate = compile_policy_proposal(
                 current,
                 store,
                 minimum_samples=args.minimum_samples,
                 success_floor=args.success_floor,
-                benchmark_suite=args.benchmark_suite,
-                quality_delta=args.quality_delta,
-                weighted_usage_delta=args.weighted_usage_delta,
+                benchmark_suite=benchmark_suite,
+                quality_delta=quality_delta,
+                weighted_usage_delta=weighted_usage_delta,
             )
             out = repo / args.output
             write_proposal(candidate, out)
