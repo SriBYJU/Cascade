@@ -9,6 +9,15 @@ Cascade is a local-first adaptive orchestration layer for Codex. It routes each 
 
 > Status: **engineering release candidate**. The core engine, safety gates, plugin packaging, cross-platform CI, benchmark harness, and release gate are implemented. Public performance claims still require the final repeated real-model benchmark; Cascade does not invent savings numbers.
 
+### What remains before the measured release
+
+- ❌ **Real 23-task × 3-repeat authenticated run:** not preserved yet.
+- ❌ **Real defensible “Cascade saves X%” number:** not yet. It will be taken only from the preserved release-grade report after the public-claim guard passes.
+- ❌ **Real sequential-vs-parallel result:** still needs to be preserved from that authenticated evidence run.
+- ❌ **Fresh ChatGPT desktop Codex confirmation:** one fresh-session plugin/skill/six-agent discovery and uninstall check remains.
+
+The earlier **63%** figure was an example calculation, not a measured Cascade release result.
+
 > **New to Cascade?** Run `optimizer tutorial` after installation, or jump to the [step-by-step tutorial](#step-by-step-tutorial-use-cascade-on-any-repository).
 
 ## Why Cascade exists

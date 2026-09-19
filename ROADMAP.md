@@ -16,4 +16,13 @@
 
 ## Current implementation
 
-The repository now contains executable implementations and automated gates across all phases. `optimizer release-gate` verifies the engineering/reproducibility prerequisites. The remaining non-synthetic 1.0 evidence step is to run the repeated live model benchmark on an authenticated Codex/model environment and attach that measured report; claims that require those real model runs remain intentionally unclaimed until measured.
+The repository now contains executable implementations and automated gates across all phases. `optimizer release-gate` verifies the engineering/reproducibility prerequisites.
+
+### Remaining release evidence
+
+- **Real 23-task × 3-repeat authenticated run:** not preserved yet.
+- **Real defensible “Cascade saves X%” number:** not yet; it must come from the preserved release-grade plain-vs-Cascade report and pass the public-claim guard.
+- **Real sequential-vs-parallel report:** still needs to be preserved from the authenticated run.
+- **Fresh ChatGPT desktop Codex discovery/install check:** still requires one product-level fresh-session confirmation.
+
+Until those checks are complete, performance claims that depend on real model execution remain intentionally unclaimed. The earlier 63% example is not a measured Cascade release result.
