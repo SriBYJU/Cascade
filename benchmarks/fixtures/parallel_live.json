@@ -1,0 +1,98 @@
+[
+  {
+    "id": "independent-three-writers",
+    "files": {
+      "pyproject.toml": "[project]\nname = \"cascade-parallel-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "alpha.py": "def alpha():\n    return 1\n",
+      "beta.py": "def beta():\n    return 2\n",
+      "gamma.py": "def gamma():\n    return 3\n",
+      "tests/test_values.py": "from alpha import alpha\nfrom beta import beta\nfrom gamma import gamma\n\n\ndef test_values():\n    assert alpha() == 10\n    assert beta() == 20\n    assert gamma() == 30\n"
+    },
+    "tasks": [
+      {
+        "id": "alpha",
+        "task": "Fix alpha.py so alpha() returns 10. Do not edit other files.",
+        "write": [
+          "alpha.py"
+        ],
+        "acceptance": [
+          [
+            "python",
+            "-c",
+            "from alpha import alpha; assert alpha() == 10"
+          ]
+        ]
+      },
+      {
+        "id": "beta",
+        "task": "Fix beta.py so beta() returns 20. Do not edit other files.",
+        "write": [
+          "beta.py"
+        ],
+        "acceptance": [
+          [
+            "python",
+            "-c",
+            "from beta import beta; assert beta() == 20"
+          ]
+        ]
+      },
+      {
+        "id": "gamma",
+        "task": "Fix gamma.py so gamma() returns 30. Do not edit other files.",
+        "write": [
+          "gamma.py"
+        ],
+        "acceptance": [
+          [
+            "python",
+            "-c",
+            "from gamma import gamma; assert gamma() == 30"
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "id": "mixed-read-write",
+    "files": {
+      "pyproject.toml": "[project]\nname = \"cascade-parallel-fixture\"\nversion = \"0.0.0\"\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+      "config/runtime.py": "MAX_RETRIES = 5\n",
+      "docs/version.md": "Runtime protocol version: v7.2\n",
+      "worker.py": "def status():\n    return 'bad'\n",
+      "tests/test_worker.py": "from worker import status\n\n\ndef test_status():\n    assert status() == 'ready'\n"
+    },
+    "tasks": [
+      {
+        "id": "find-retries",
+        "task": "Find the exact repository path defining MAX_RETRIES and report it. Do not edit anything.",
+        "write": [],
+        "answer_contains": [
+          "config/runtime.py"
+        ]
+      },
+      {
+        "id": "find-version",
+        "task": "Read the repository docs and report the exact runtime protocol version. Do not edit anything.",
+        "write": [],
+        "answer_contains": [
+          "v7.2"
+        ]
+      },
+      {
+        "id": "fix-worker",
+        "task": "Fix worker.py so status() returns 'ready'. Do not edit other files.",
+        "write": [
+          "worker.py"
+        ],
+        "acceptance": [
+          [
+            "python",
+            "-c",
+            "from worker import status; assert status() == 'ready'"
+          ]
+        ]
+      }
+    ]
+  }
+]

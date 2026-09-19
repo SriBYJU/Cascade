@@ -12,6 +12,10 @@ from .doctor import doctor
 from .evaluation.harness import EvaluationHarness
 from .evaluation.models import load_cases
 from .evaluation.parallel_benchmark import run_scheduler_benchmark
+from .evaluation.parallel_live import (
+    ParallelLiveHarness,
+    load_parallel_scenarios,
+)
 from .evaluation.report import load_report, measured_policy_certificate
 from .observability.render import (
     render_plan,
@@ -155,7 +159,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--suite",
         default="micro",
-        choices=["micro", "live", "parallel"],
+        choices=["micro", "live", "parallel", "parallel-live"],
     )
     p.add_argument(
         "--output",
@@ -430,6 +434,33 @@ def main(argv: list[str] | None = None) -> int:
             out.write_text(json.dumps(result, indent=2, sort_keys=True))
             _print({"output": str(out), **result})
             return 0
+
+        if args.suite == "parallel-live":
+            manifest = (
+                repo / args.manifest
+                if args.manifest != "benchmarks/fixtures/live_tasks.json"
+                else repo / "benchmarks/fixtures/parallel_live.json"
+            )
+            scenarios = load_parallel_scenarios(manifest)
+            harness = ParallelLiveHarness(repo)
+            result = harness.run(
+                scenarios,
+                repeats=args.repeats,
+                model=args.model,
+                max_workers=runtime.config.max_concurrent_workers,
+            )
+            out = repo / args.output
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(json.dumps(result, indent=2, sort_keys=True))
+            _print(
+                {
+                    "output": str(out),
+                    "measured": result.get("measured"),
+                    "status": result.get("status"),
+                    "summary": result.get("summary"),
+                }
+            )
+            return 0 if result.get("measured") else 2
 
         manifest = repo / args.manifest
         cases = load_cases(manifest)

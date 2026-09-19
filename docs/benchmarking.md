@@ -83,3 +83,17 @@ optimizer benchmark --suite parallel --repeats 5 \
 ```
 
 This benchmark is deliberately labeled **scheduler-only**. It proves the DAG/concurrency machinery can create parallel benefit without violating write-set serialization, but it is not an end-to-end model-latency claim. A live parallel-agent suite is still required before publishing product performance numbers.
+
+
+## Live parallel ablation
+
+Cascade also includes an end-to-end sequential-vs-parallel harness using identical generated repositories and the same model mapping:
+
+```bash
+optimizer benchmark --suite parallel-live \
+  --repeats 3 \
+  --model auto \
+  --output .cascade/benchmarks/parallel-live.json
+```
+
+The current manifest contains a three-writer disjoint scenario and a mixed read/write scenario. Each writer is still isolated in its own worktree, acceptance is evaluated inside that worktree, and the report records full runtime stats plus sequential/parallel wall time. This is the appropriate surface for the Phase 5 latency claim; the scheduler-only benchmark remains a lower-level implementation check.
