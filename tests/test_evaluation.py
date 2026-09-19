@@ -101,6 +101,37 @@ def test_aggregate_trials_empty():
     assert aggregate_trials([]) == {}
 
 
+def test_live_harness_records_trial_worker_count(tmp_path: Path):
+    case = BenchmarkCase(
+        case_id="workers",
+        category="search",
+        task="find config",
+        files={"config.py": "VALUE = 1\n"},
+        write_paths=[],
+        acceptance=[],
+        answer_contains=["config.py"],
+    )
+
+    class ReadOnlyAdapter(FakeEditingAdapter):
+        def run(self, prompt: str, **kwargs) -> AdapterResult:
+            del prompt, kwargs
+            return AdapterResult(True, "config.py")
+
+    report = EvaluationHarness(
+        tmp_path,
+        adapter=ReadOnlyAdapter(),
+    ).run(
+        [case],
+        configs=["plain"],
+        repeats=2,
+        output_dir=tmp_path / "workers-report",
+        max_workers=2,
+    )
+
+    assert report["trial_workers"] == 2
+    assert len(report["trials"]) == 2
+
+
 
 def test_answer_acceptance_supports_read_only_tasks(tmp_path: Path):
     case = BenchmarkCase(
