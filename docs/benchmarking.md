@@ -150,3 +150,10 @@ optimizer release-benchmark \
 ```
 
 The command requires at least three repeats and produces the live controlled-model-pool report, Context Firewall and cache ablations, optional local baseline, sequential-vs-parallel live report, explicit savings summaries, raw trial trajectories, and the release-gate result in one bundle. It requires a real authenticated model runtime and intentionally returns `environment-unavailable` rather than synthetic performance data when that runtime is absent.
+
+
+## Benchmark trace privacy
+
+Benchmark trajectories are metadata-only by default. Content-bearing fields such as model messages, errors, stdout/stderr, reviewer prose, and worker output are replaced with type/size/SHA-256 metadata before they are written to benchmark artifacts. This keeps the default privacy posture consistent with normal Cascade traces.
+
+For synthetic/public fixtures where publishing full model/tool content is intentional, pass `--full-trace` to `optimizer benchmark`. Treat that flag as an explicit disclosure choice; do not use it on proprietary repositories or sensitive manifests unless the resulting artifacts are handled accordingly.

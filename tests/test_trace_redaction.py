@@ -109,3 +109,15 @@ def test_invalid_trace_content_fails_closed(tmp_path: Path):
     )
     with pytest.raises(ValueError):
         CascadeConfig.load(tmp_path)
+
+
+
+def test_metadata_redactor_covers_benchmark_worker_message():
+    from engine.observability.redaction import metadata_only_payload
+
+    payload = metadata_only_payload(
+        {"worker_message": SECRET, "status": "verified"}
+    )
+    assert payload["status"] == "verified"
+    assert payload["worker_message"]["redacted"] is True
+    assert SECRET not in str(payload)

@@ -18,6 +18,7 @@ CONTENT_KEYS = {
     "stdout",
     "summary",
     "text",
+    "worker_message",
 }
 
 

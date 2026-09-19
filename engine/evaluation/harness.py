@@ -10,6 +10,7 @@ from typing import Any
 
 from ..adapters.base import ModelAdapter
 from ..adapters.codex import CodexAdapter
+from ..observability.redaction import metadata_only_payload
 from ..policy_lock import load_policy, policy_digest
 from ..router.capability_registry import CapabilityRegistry
 from ..router.router import Router
@@ -41,9 +42,11 @@ class EvaluationHarness:
         repo_root: str | Path,
         adapter: ModelAdapter | None = None,
         profiles: dict[Capability, ModelProfile] | None = None,
+        full_trace: bool = False,
     ):
         self.repo_root = Path(repo_root).resolve()
         self.adapter: ModelAdapter = adapter or CodexAdapter()
+        self.full_trace = full_trace
         self.model_pool = (
             EvaluationModelPool(profiles)
             if profiles
@@ -181,8 +184,8 @@ class EvaluationHarness:
             )
         return passed, checks
 
-    @staticmethod
     def _write_trace(
+        self,
         output_dir: Path,
         trial_name: str,
         payload: dict[str, Any],
@@ -190,7 +193,20 @@ class EvaluationHarness:
         raw_dir = output_dir / "raw"
         raw_dir.mkdir(parents=True, exist_ok=True)
         path = raw_dir / f"{trial_name}.json"
-        path.write_text(json.dumps(payload, indent=2, sort_keys=True, default=str))
+        stored = (
+            payload
+            if self.full_trace
+            else metadata_only_payload(payload)
+        )
+        path.write_text(
+            json.dumps(
+                stored,
+                indent=2,
+                sort_keys=True,
+                default=str,
+            )
+            + "\n"
+        )
         return str(path)
 
     def _plain_trial(
@@ -263,6 +279,14 @@ class EvaluationHarness:
                     and isinstance(event.get("item"), dict)
                     and event["item"].get("type") in tool_item_types
                 )
+                stored_checks = (
+                    checks
+                    if self.full_trace
+                    else metadata_only_payload(
+                        {"checks": checks}
+                    )["checks"]
+                )
+                assert isinstance(stored_checks, list)
                 return TrialResult(
                     case_id=case.case_id,
                     category=case.category,
@@ -281,8 +305,12 @@ class EvaluationHarness:
                     agent_calls=1,
                     trajectory_steps=max(1, len(result.events)),
                     raw_trace=trace,
-                    error=result.error,
-                    acceptance=checks,
+                    error=(
+                        result.error
+                        if self.full_trace
+                        else None
+                    ),
+                    acceptance=stored_checks,
                 )
             except Exception as exc:
                 wall = int((time.monotonic() - started) * 1000)
@@ -416,6 +444,14 @@ class EvaluationHarness:
                         "acceptance": checks,
                     },
                 )
+                stored_checks = (
+                    checks
+                    if self.full_trace
+                    else metadata_only_payload(
+                        {"checks": checks}
+                    )["checks"]
+                )
+                assert isinstance(stored_checks, list)
                 trial = TrialResult(
                     case_id=case.case_id,
                     category=case.category,
@@ -440,7 +476,7 @@ class EvaluationHarness:
                     retries=int(stats.get("retries", 0)),
                     escalations=int(stats.get("escalations", 0)),
                     raw_trace=trace,
-                    acceptance=checks,
+                    acceptance=stored_checks,
                 )
                 self._cleanup_result_worktree(runtime, result, root)
                 return trial

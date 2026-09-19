@@ -9,6 +9,7 @@ from typing import Any
 
 from ..adapters.base import ModelAdapter
 from ..adapters.codex import CodexAdapter
+from ..observability.redaction import metadata_only_payload
 from ..router.capability_registry import CapabilityRegistry
 from ..router.router import Router
 from ..runtime import CascadeRuntime
@@ -104,9 +105,11 @@ class ParallelLiveHarness:
         self,
         repo_root: str | Path,
         adapter: ModelAdapter | None = None,
+        full_trace: bool = False,
     ):
         self.repo_root = Path(repo_root).resolve()
         self.adapter: ModelAdapter = adapter or CodexAdapter()
+        self.full_trace = full_trace
 
     @staticmethod
     def _init_repo(
@@ -277,6 +280,21 @@ class ParallelLiveHarness:
                 len(node.depends_on)
                 for node in dag.nodes.values()
             )
+            stored_acceptance = (
+                acceptance
+                if self.full_trace
+                else metadata_only_payload(
+                    {"acceptance": acceptance}
+                )["acceptance"]
+            )
+            stored_results = (
+                results
+                if self.full_trace
+                else {
+                    task_id: metadata_only_payload(result)
+                    for task_id, result in results.items()
+                }
+            )
             response = {
                 "measured": True,
                 "status": "completed",
@@ -285,10 +303,10 @@ class ParallelLiveHarness:
                 "verified_success": verified,
                 "wall_time_ms": wall_ms,
                 "stats": runtime.stats(),
-                "acceptance": acceptance,
+                "acceptance": stored_acceptance,
                 "levels": levels,
                 "dependency_edges": dependency_edges,
-                "results": results,
+                "results": stored_results,
                 "trace": runtime.trace(),
             }
             for task_id, result in results.items():

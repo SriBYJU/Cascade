@@ -189,6 +189,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="comma-separated live configs",
     )
     p.add_argument("--repeats", type=int, default=1)
+    p.add_argument(
+        "--full-trace",
+        action="store_true",
+        help=(
+            "store full benchmark model/tool content; default is "
+            "metadata-only redaction"
+        ),
+    )
     p.add_argument("--model", default="auto")
     p.add_argument(
         "--profiles",
@@ -550,7 +558,10 @@ def main(argv: list[str] | None = None) -> int:
                 else repo / "benchmarks/fixtures/parallel_live.json"
             )
             scenarios = load_parallel_scenarios(manifest)
-            parallel_harness = ParallelLiveHarness(repo)
+            parallel_harness = ParallelLiveHarness(
+                repo,
+                full_trace=args.full_trace,
+            )
             result = parallel_harness.run(
                 scenarios,
                 repeats=args.repeats,
@@ -591,6 +602,7 @@ def main(argv: list[str] | None = None) -> int:
         live_harness = EvaluationHarness(
             repo,
             profiles=profiles,
+            full_trace=args.full_trace,
         )
         report = live_harness.run(
             cases,
