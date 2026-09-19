@@ -169,3 +169,62 @@ def test_parallel_live_harness_cleans_writer_worktrees(tmp_path: Path):
     assert result["verified_success"] is True
     leftovers = list(tmp_path.glob(".repo.cascade-worktrees/*"))
     assert leftovers == []
+
+
+
+def test_parallel_live_summary_records_system_metrics(tmp_path: Path):
+    scenario = ParallelLiveScenario(
+        scenario_id="metrics",
+        files={
+            "pyproject.toml": (
+                '[project]\nname="fixture"\nversion="0.0.0"\n'
+                '[tool.pytest.ini_options]\ntestpaths=["tests"]\n'
+            ),
+            "alpha.py": "def alpha():\n    return 1\n",
+            "beta.py": "def beta():\n    return 2\n",
+            "tests/test_smoke.py": "def test_smoke():\n    assert True\n",
+        },
+        tasks=(
+            ParallelLiveTask(
+                "alpha",
+                "Fix alpha.py so alpha() returns 10.",
+                ("alpha.py",),
+                (
+                    (
+                        "python",
+                        "-c",
+                        "from alpha import alpha; assert alpha() == 10",
+                    ),
+                ),
+            ),
+            ParallelLiveTask(
+                "beta",
+                "Fix beta.py so beta() returns 20.",
+                ("beta.py",),
+                (
+                    (
+                        "python",
+                        "-c",
+                        "from beta import beta; assert beta() == 20",
+                    ),
+                ),
+            ),
+        ),
+    )
+    report = ParallelLiveHarness(
+        tmp_path,
+        adapter=ParallelFakeAdapter(),
+    ).run(
+        [scenario],
+        repeats=1,
+        max_workers=2,
+    )
+    row = report["summary"]["metrics"]
+    assert "sequential_model_tokens_mean" in row
+    assert "parallel_model_tokens_mean" in row
+    assert "sequential_context_bytes_mean" in row
+    assert "parallel_context_bytes_mean" in row
+    assert "sequential_retries_mean" in row
+    assert "parallel_retries_mean" in row
+    assert "merge_conflicts_observed" in row
+    assert row["all_verified"] is True
