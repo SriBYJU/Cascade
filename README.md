@@ -68,14 +68,42 @@ Add `--apply` to `optimizer run` only when you want a verified writer result int
 
 ### Easiest option: paste the GitHub link into Codex
 
-If you already use Codex in the terminal, you can let it do the setup for you. Start Codex in the repository you want to use Cascade with:
+#### ChatGPT desktop app — easiest path
+
+If you use the **ChatGPT desktop app**, select **Codex** from the top-left menu, open the local project folder you want Cascade to work on, start a new Codex chat, and paste:
+
+```text
+Install and set up Cascade for this project from:
+https://github.com/SriBYJU/Cascade
+
+Use the safest setup path. First inspect the repository, then run a dry-run
+installation, explain any conflicts, and only install after the dry run is
+clean. Run optimizer doctor when setup is complete. Do not overwrite an
+existing conflicting file without asking me first.
+```
+
+Codex in the ChatGPT desktop app can work with local folders, repositories, terminals, and developer tools. With the permissions you grant it, it can use Git/Python/terminal commands to fetch the public Cascade repository and perform the setup for the currently opened project.
+
+For the plugin experience, Codex can also add Cascade's repository marketplace:
+
+```text
+Add the Cascade plugin marketplace from SriBYJU/Cascade, then tell me
+exactly what I need to click in the ChatGPT desktop Plugin Directory to
+install Cascade.
+```
+
+After the marketplace is added, restart the ChatGPT desktop app, open the **Plugin Directory**, choose the Cascade marketplace, install **Cascade**, and start a fresh Codex conversation so the plugin is discovered from a clean session.
+
+#### Codex CLI — same idea from the terminal
+
+If you already use Codex in the terminal, start it in the repository you want to use Cascade with:
 
 ```bash
 cd /path/to/your/project
 codex
 ```
 
-Then paste this:
+Then paste:
 
 ```text
 Install Cascade from https://github.com/SriBYJU/Cascade.
