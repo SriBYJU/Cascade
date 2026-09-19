@@ -268,6 +268,14 @@ class ParallelLiveHarness:
                     "status": result.get("status"),
                 }
 
+            levels = [
+                [node.task_id for node in level]
+                for level in dag.levels()
+            ]
+            dependency_edges = sum(
+                len(node.depends_on)
+                for node in dag.nodes.values()
+            )
             return {
                 "measured": True,
                 "status": "completed",
@@ -277,10 +285,10 @@ class ParallelLiveHarness:
                 "wall_time_ms": wall_ms,
                 "stats": runtime.stats(),
                 "acceptance": acceptance,
-                "levels": [
-                    [node.task_id for node in level]
-                    for level in dag.levels()
-                ],
+                "levels": levels,
+                "dependency_edges": dependency_edges,
+                "results": results,
+                "trace": runtime.trace(),
             }
 
     def run(
