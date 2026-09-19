@@ -11,6 +11,7 @@ from .context.repo_map import build_repo_map
 from .doctor import doctor
 from .evaluation.harness import EvaluationHarness
 from .evaluation.models import load_cases
+from .observability.render import render_stats, render_trace, render_why
 from .policy_lock import load_policy, policy_digest, write_proposal
 from .router.learner import AdmittedEvidenceStore
 from .router.policy_compiler import (
@@ -106,11 +107,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("trace", help="show execution event tree")
     p.add_argument("run_id", nargs="?")
-    sub.add_parser("why", help="explain most recent route")
-    sub.add_parser(
+    p.add_argument("--json", action="store_true")
+    p = sub.add_parser("why", help="explain most recent route")
+    p.add_argument("--json", action="store_true")
+    p = sub.add_parser(
         "stats",
         help="report head and total model usage plus routing outcomes",
     )
+    p.add_argument("--json", action="store_true")
     sub.add_parser("models", help="show resolved capability profile")
 
     p = sub.add_parser("cache", help="inspect or clear exact cache")
@@ -294,13 +298,25 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
     if args.command == "trace":
-        _print(runtime.trace(args.run_id))
+        trace = runtime.trace(args.run_id)
+        if args.json:
+            _print(trace)
+        else:
+            print(render_trace(trace))
         return 0
     if args.command == "why":
-        _print(runtime.why() or {"message": "no route recorded yet"})
+        why = runtime.why()
+        if args.json:
+            _print(why or {"message": "no route recorded yet"})
+        else:
+            print(render_why(why))
         return 0
     if args.command == "stats":
-        _print(runtime.stats())
+        stats = runtime.stats()
+        if args.json:
+            _print(stats)
+        else:
+            print(render_stats(stats))
         return 0
     if args.command == "models":
         _print(
