@@ -27,5 +27,6 @@ jobs:
       - run: python -m ruff check .
       - run: python -m mypy engine
       - run: python -m pytest
+      - run: python scripts/verify_plugin_layout.py
       - run: python -m compileall -q engine
       - run: optimizer benchmark
