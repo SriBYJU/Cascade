@@ -43,6 +43,7 @@ jobs:
       - name: Verify current Codex surfaces
         run: |
           set -euo pipefail
+          mkdir -p .cascade
           codex --version
           optimizer doctor > .cascade/codex-doctor.json
           python scripts/verify_plugin_layout.py
