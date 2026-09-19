@@ -18,6 +18,7 @@ from .cache.singleflight import SingleFlight
 from .config import CascadeConfig
 from .context.envelope import build_envelope
 from .context.repo_map import build_repo_map, repository_fingerprint
+from .context.safe_path import safe_repo_path
 from .context.retrieval import (
     collect_broad_evidence,
     collect_evidence,
@@ -412,10 +413,17 @@ class CascadeRuntime:
         total_chars = 0
         max_chars = planned.envelope.max_context_tokens * 4
         for ref in planned.envelope.evidence:
-            path = root / ref.file
-            if not path.exists():
+            path = safe_repo_path(
+                root,
+                ref.file,
+                require_file=True,
+            )
+            if path is None:
                 continue
-            lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+            lines = path.read_text(
+                encoding="utf-8",
+                errors="replace",
+            ).splitlines()
             excerpt = "\n".join(
                 f"{i}: {lines[i - 1]}"
                 for i in range(
