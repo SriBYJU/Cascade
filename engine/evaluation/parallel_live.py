@@ -379,9 +379,10 @@ class ParallelLiveHarness:
             def mode_metric(
                 mode: str,
                 key: str,
+                runs_for_scenario: list[dict[str, Any]] = scenario_runs,
             ) -> float:
                 values: list[float] = []
-                for run in scenario_runs:
+                for run in runs_for_scenario:
                     if run.get("mode") != mode:
                         continue
                     stats = run.get("stats")
