@@ -37,3 +37,22 @@ Release CI should re-check these surfaces before a stable release because the pl
 ## Long-running goal compatibility
 
 Current Codex documentation exposes long-running `/goal` support through `[features] goals = true`. Cascade enables that supported feature in the project config, but it does **not** declare an undocumented native goal-token-budget key. Cascade's own hard reservation budgets remain the authoritative safety mechanism unless a future Codex release documents a native budget surface and `optimizer doctor` can feature-probe it.
+
+
+## Safe project-scoped skill and agent install
+
+Codex currently discovers repository skills under `.agents/skills` and project custom agents under `.codex/agents`. Cascade can materialize both into a target repository without requiring user-global state:
+
+```bash
+optimizer project-install --target /path/to/repo --dry-run
+optimizer project-install --target /path/to/repo
+optimizer project-status --target /path/to/repo
+```
+
+The install receipt is stored locally under `.cascade/project-install.json`. Existing conflicting files are never overwritten unless `--overwrite` is explicitly supplied; overwritten files receive local backups. Uninstall removes only files still matching the installed hash, restores backups when present, and preserves files changed by the user after installation.
+
+```bash
+optimizer project-uninstall --target /path/to/repo
+```
+
+This direct project integration is complementary to plugin-marketplace installation: the plugin exposes the reusable Cascade skill, while project installation is the explicit path for the six project-scoped custom-agent TOML definitions documented by Codex.

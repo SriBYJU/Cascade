@@ -107,6 +107,9 @@ Sidecars: budget manager, exact cache, single-flight, worktree manager, write-se
 | `optimizer models` | Runtime capability profile. |
 | `optimizer cache` | Inspect or clear exact cache. |
 | `optimizer benchmark` | Run reproducible local benchmark fixtures. |
+| `optimizer project-install` | Safely install the Cascade skill and six custom agents into a repository. |
+| `optimizer project-status` | Detect drift in installed project integration. |
+| `optimizer project-uninstall` | Remove managed integration files while preserving user edits/backups. |
 | `optimizer cleanup` | Prune stale worktrees and transient state. |
 
 ## Routing is capability-based, not model-name based

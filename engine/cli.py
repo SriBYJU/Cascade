@@ -24,6 +24,11 @@ from .observability.render import (
     render_why,
 )
 from .policy_lock import load_policy, policy_digest, write_proposal
+from .project_install import (
+    install_project,
+    project_status,
+    uninstall_project,
+)
 from .router.learner import AdmittedEvidenceStore
 from .router.policy_compiler import (
     activate_policy,
@@ -226,6 +231,45 @@ def build_parser() -> argparse.ArgumentParser:
         "--approve-digest",
         required=True,
         help="exact proposal digest printed by policy propose/diff",
+    )
+
+    p = sub.add_parser(
+        "project-install",
+        help="install Cascade skill and six custom agents into a project",
+    )
+    p.add_argument(
+        "--target",
+        help="target repository; defaults to --repo",
+    )
+    p.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="replace conflicts after creating uninstallable backups",
+    )
+    p.add_argument("--dry-run", action="store_true")
+
+    p = sub.add_parser(
+        "project-uninstall",
+        help="remove only files managed by Cascade's install receipt",
+    )
+    p.add_argument(
+        "--target",
+        help="target repository; defaults to --repo",
+    )
+    p.add_argument(
+        "--force",
+        action="store_true",
+        help="remove modified managed files; use with care",
+    )
+    p.add_argument("--dry-run", action="store_true")
+
+    p = sub.add_parser(
+        "project-status",
+        help="check installed Cascade project integration for drift",
+    )
+    p.add_argument(
+        "--target",
+        help="target repository; defaults to --repo",
     )
 
     sub.add_parser(
@@ -576,6 +620,31 @@ def main(argv: list[str] | None = None) -> int:
             }
         )
         return 0
+
+    if args.command == "project-install":
+        target = Path(args.target).resolve() if args.target else repo
+        _print(
+            install_project(
+                target,
+                overwrite=args.overwrite,
+                dry_run=args.dry_run,
+            )
+        )
+        return 0
+    if args.command == "project-uninstall":
+        target = Path(args.target).resolve() if args.target else repo
+        result = uninstall_project(
+            target,
+            force=args.force,
+            dry_run=args.dry_run,
+        )
+        _print(result)
+        return 0 if result["status"] != "partial" else 1
+    if args.command == "project-status":
+        target = Path(args.target).resolve() if args.target else repo
+        result = project_status(target)
+        _print(result)
+        return 0 if result["status"] in {"installed", "not-installed"} else 1
 
     if args.command == "cleanup":
         manager = WorktreeManager(repo)
