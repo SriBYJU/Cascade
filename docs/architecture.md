@@ -67,3 +67,8 @@ Validator specifications now carry an explicit repository-relative working direc
 ## Go and Rust structural extraction
 
 The lightweight Context Firewall index now has language-specific extraction for Go and Rust instead of treating both as generic text. Go indexing captures functions, methods, types, import blocks, the local `go.mod` module path, and resolves local package imports to repository files. Rust indexing captures functions/types/traits/modules plus `use` and `mod` declarations, with conservative resolution for `crate::`, `self::`, `super::`, and sibling module files. Malformed files fail soft and remain indexable as text rather than aborting repository mapping.
+
+
+## Hardware-aware local tier diagnostics
+
+`optimizer doctor` now reports cross-platform CPU/RAM information, NVIDIA memory/load when available, local Ollama/vLLM endpoints, model IDs, best-effort context lengths, and the local adapters' tool/sandbox behavior. The local direct adapters are explicitly declared prompt-only evidence consumers with no filesystem tools or sandbox enforcement; Cascade therefore keeps them on bounded low-risk/read-oriented routes and does not pretend they can safely replace a worktree-capable Codex writer.

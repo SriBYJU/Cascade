@@ -171,8 +171,14 @@ def doctor(repo_root: str | Path = ".") -> dict[str, Any]:
         "codex_exec": codex_probe,
         "ollama_available": ollama.available(),
         "ollama_models": ollama.models() if ollama.available() else [],
+        "ollama_diagnostics": (
+            ollama.diagnostics() if ollama.available() else None
+        ),
         "vllm_available": vllm.available(),
         "vllm_models": vllm.models() if vllm.available() else [],
+        "vllm_diagnostics": (
+            vllm.diagnostics() if vllm.available() else None
+        ),
         "local_model_ready": local_ready,
         "hardware": detect_hardware().to_dict(),
         "validators": [
