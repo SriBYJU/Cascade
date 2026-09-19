@@ -48,10 +48,10 @@ jobs:
           optimizer doctor > .cascade/codex-doctor.json
           python scripts/verify_plugin_layout.py
 
-      - name: Add and list repository marketplace
+      - name: Add public GitHub marketplace and list it
         run: |
           set -euo pipefail
-          codex plugin marketplace add ./
+          codex plugin marketplace add SriBYJU/Cascade --ref main
           codex plugin marketplace list | tee .cascade/marketplaces.txt
           grep -q "cascade-local" .cascade/marketplaces.txt
 
