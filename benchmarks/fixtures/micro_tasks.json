@@ -17,6 +17,6 @@
   {"id":"m16","category":"integrate","task":"Integrate verified auth branch","step_type":"integrate","write":["auth/**"],"has_tests":true,"strong_validation":true,"expected_min":"build"},
   {"id":"m17","category":"security-critical","task":"Rotate production secret and deploy auth change","step_type":"critical","write":["deploy/**"],"has_tests":true,"expected_min":"critical"},
   {"id":"m18","category":"verify","task":"Typecheck the project","step_type":"verify","write":[],"has_tests":true,"expected_min":"no-model"},
-  {"id":"m19","category":"quick","task":"Summarize these three function signatures","step_type":"explore","write":[],"has_tests":false,"expected_min":"explore"},
+  {"id":"m19","category":"quick","task":"Summarize these three function signatures","step_type":"explore","write":[],"has_tests":false,"expected_min":"quick"},
   {"id":"m20","category":"debug-security","task":"Debug auth race condition in session refresh","step_type":"debug","write":["auth/session.py"],"has_tests":true,"expected_min":"deep"}
 ]

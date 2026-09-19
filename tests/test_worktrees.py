@@ -44,3 +44,13 @@ def test_default_worktrees_live_outside_checkout(tmp_path: Path):
     repo = _repo(tmp_path)
     manager = WorktreeManager(repo)
     assert not manager.worktrees_dir.is_relative_to(repo)
+
+
+def test_cleanup_force_preserves_main_checkout(tmp_path: Path):
+    repo = _repo(tmp_path)
+    manager = WorktreeManager(repo, state_dir=tmp_path / "state")
+    worktree = manager.create("dirty")
+    (worktree.path / "a.txt").write_text("dirty worker change\n")
+    manager.cleanup(worktree, force=True)
+    assert (repo / "a.txt").read_text() == "base\n"
+    assert not worktree.path.exists()
