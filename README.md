@@ -66,6 +66,37 @@ optimizer stats
 
 Add `--apply` to `optimizer run` only when you want a verified writer result integrated into a clean current checkout.
 
+### Easiest option: paste the GitHub link into Codex
+
+If you already use Codex in the terminal, you can let it do the setup for you. Start Codex in the repository you want to use Cascade with:
+
+```bash
+cd /path/to/your/project
+codex
+```
+
+Then paste this:
+
+```text
+Install Cascade from https://github.com/SriBYJU/Cascade.
+Set it up safely for this repository, run optimizer doctor, show me the
+project-install dry run, then install the project integration. Do not
+overwrite an existing conflicting file without asking me first.
+```
+
+Codex can clone/download the public repository, create the Python environment, install Cascade, run the checks, and install the project-scoped integration using the terminal permissions you grant it.
+
+If you prefer one direct terminal command instead of cloning manually:
+
+```bash
+python -m pip install "git+https://github.com/SriBYJU/Cascade.git"
+optimizer doctor
+optimizer project-install --target . --dry-run
+optimizer project-install --target .
+```
+
+For a private fork, Git/GitHub authentication must already be available in that terminal environment.
+
 ## Step-by-step tutorial: use Cascade on any repository
 
 This is the simplest end-to-end path. You do **not** need to understand the router, worktrees, or benchmark system first.
