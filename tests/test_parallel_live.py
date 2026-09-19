@@ -40,11 +40,11 @@ class ParallelFakeAdapter:
         try:
             time.sleep(0.03)
             if sandbox_mode == "workspace-write":
-                if "alpha()" in prompt:
+                if '"goal": "Fix alpha.py' in prompt:
                     Path(cwd, "alpha.py").write_text(
                         "def alpha():\n    return 10\n"
                     )
-                elif "beta()" in prompt:
+                elif '"goal": "Fix beta.py' in prompt:
                     Path(cwd, "beta.py").write_text(
                         "def beta():\n    return 20\n"
                     )
