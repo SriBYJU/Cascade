@@ -57,3 +57,8 @@ Validator discovery no longer treats whatever tools happen to be installed in th
 Concrete model names remain runtime configuration rather than routing policy. Repositories can now supply validated capability profiles either inline as `model_profiles` in `.cascade.json` or through a repository-contained `model_profiles_file`. Each entry declares a capability class, supported reasoning efforts, local/cloud placement, availability, and relative cost/latency weights. Invalid JSON, duplicate capability entries, attempts to redefine the deterministic `no-model` tier, empty/invalid reasoning declarations, or profile paths escaping the repository fail closed. Environment/`capability_map` overrides may replace only the model identifier; they do not lower the capability class or bypass security/risk floors.
 
 See `examples/model-profiles.example.json` for a provider-neutral fixture.
+
+
+## Monorepo-aware validator discovery
+
+Validator specifications now carry an explicit repository-relative working directory. Cascade discovers root and conventional nested Python projects, parses npm/yarn/pnpm workspace package patterns, and runs each declared test/lint/typecheck command in the owning subproject rather than assuming the repository root. Workspace paths are resolved inside the repository and traversal patterns are ignored. This keeps validation deterministic while supporting common monorepo layouts without executing undeclared framework-specific commands.

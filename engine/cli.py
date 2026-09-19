@@ -674,6 +674,7 @@ def main(argv: list[str] | None = None) -> int:
                     "name": v.name,
                     "command": list(v.command),
                     "category": v.category,
+                    "cwd": v.cwd,
                 }
                 for v in discover_validators(repo)
             ]

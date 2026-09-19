@@ -8,7 +8,13 @@ from .discover import ValidatorSpec
 
 
 def run_validator(spec: ValidatorSpec, root: str | Path, *, timeout_seconds: int = 180, output_cap_chars: int = 12000) -> ValidationCheck:
-    result = run_command(spec.command, root, timeout_seconds=timeout_seconds, output_cap_chars=output_cap_chars)
+    cwd = Path(root) / spec.cwd
+    result = run_command(
+        spec.command,
+        cwd,
+        timeout_seconds=timeout_seconds,
+        output_cap_chars=output_cap_chars,
+    )
     return ValidationCheck(
         name=spec.name,
         command=list(spec.command),

@@ -180,6 +180,7 @@ def doctor(repo_root: str | Path = ".") -> dict[str, Any]:
                 "name": validator.name,
                 "command": list(validator.command),
                 "category": validator.category,
+                "cwd": validator.cwd,
             }
             for validator in validators
         ],
