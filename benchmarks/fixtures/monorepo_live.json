@@ -1,0 +1,46 @@
+[
+  {
+    "id": "monorepo-read-boundary",
+    "category": "monorepo-read",
+    "task": "Find the package-local file that defines PAYMENT_RETRY_LIMIT and return its exact repository path. Do not edit anything.",
+    "risk": "low",
+    "write": [],
+    "files": {
+      "package.json": "{\"private\": true, \"workspaces\": [\"packages/*\"]}\n",
+      "packages/api/package.json": "{\"name\": \"api\", \"scripts\": {\"test\": \"node test.js\"}}\n",
+      "packages/api/src/config.js": "export const PAYMENT_RETRY_LIMIT = 4;\n",
+      "packages/api/test.js": "process.exit(0);\n",
+      "packages/web/package.json": "{\"name\": \"web\", \"scripts\": {\"test\": \"node test.js\"}}\n",
+      "packages/web/src/config.js": "export const UI_RETRY_LIMIT = 2;\n",
+      "packages/web/test.js": "process.exit(0);\n"
+    },
+    "answer_contains": [
+      "packages/api/src/config.js"
+    ]
+  },
+  {
+    "id": "monorepo-bounded-package-write",
+    "category": "monorepo-write",
+    "task": "Change only packages/core/value.txt so it contains exactly core-v2. Do not modify the sibling web package.",
+    "risk": "low",
+    "write": [
+      "packages/core/value.txt"
+    ],
+    "files": {
+      "package.json": "{\"private\": true, \"workspaces\": [\"packages/*\"]}\n",
+      "packages/core/package.json": "{\"name\": \"core\", \"scripts\": {\"test\": \"node test.js\"}}\n",
+      "packages/core/value.txt": "core-v1\n",
+      "packages/core/test.js": "const fs = require('fs'); if (fs.readFileSync('value.txt', 'utf8').trim() !== 'core-v2') process.exit(1);\n",
+      "packages/web/package.json": "{\"name\": \"web\", \"scripts\": {\"test\": \"node test.js\"}}\n",
+      "packages/web/value.txt": "web-v1\n",
+      "packages/web/test.js": "const fs = require('fs'); if (fs.readFileSync('value.txt', 'utf8').trim() !== 'web-v1') process.exit(1);\n"
+    },
+    "acceptance": [
+      [
+        "python",
+        "-c",
+        "from pathlib import Path; assert Path('packages/core/value.txt').read_text().strip() == 'core-v2'; assert Path('packages/web/value.txt').read_text().strip() == 'web-v1'"
+      ]
+    ]
+  }
+]
