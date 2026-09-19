@@ -34,3 +34,8 @@ Trace content defaults to metadata-oriented records. The core avoids storing API
 Normal worker envelopes now always forbid writes to Cascade's trust/control-plane files, including `policy.lock.yaml`, root/compatibility plugin manifests, `.codex/config.toml`, `.codex/agents/**`, and scoped `AGENTS.md` instruction files. Caller-supplied forbidden paths are merged with these mandatory protections rather than replacing them.
 
 Unknown executable commands also fail closed into an approval-required risk class. Network tools are classified as writes when mutation flags/methods are present, and environment-dumping commands are treated as secret access.
+
+
+## Metadata-only trace enforcement
+
+The default `trace_content: "metadata_only"` mode now enforces redaction before an event enters SQLite. Content-bearing fields such as worker final messages, errors, stdout/stderr, reviewer summaries/findings, architecture decisions, prompts, and diffs are replaced with type/size/SHA-256 metadata. Setting `trace_content: "full"` is an explicit local opt-in. Invalid trace modes fail closed during configuration loading.

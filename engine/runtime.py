@@ -24,6 +24,7 @@ from .context.retrieval import (
     estimate_context_tokens,
 )
 from .metrics.route_regret import best_known_capability, route_regret
+from .observability.redaction import metadata_only_payload
 from .router.capability_registry import CapabilityRegistry
 from .router.classifier import classify_step
 from .router.learner import AdmittedEvidenceStore
@@ -142,6 +143,13 @@ class CascadeRuntime:
         metrics: dict[str, int | float] | None = None,
         redacted: bool = True,
     ) -> None:
+        raw_payload = payload or {}
+        metadata_only = self.config.trace_content == "metadata_only"
+        stored_payload = (
+            metadata_only_payload(raw_payload)
+            if metadata_only
+            else raw_payload
+        )
         self.events.append(
             Event(
                 run_id=run_id,
@@ -154,9 +162,9 @@ class CascadeRuntime:
                     source_id="runtime",
                     trust=TrustLevel.TRUSTED_POLICY,
                 ),
-                payload=payload or {},
+                payload=stored_payload,
                 metrics=metrics or {},
-                payload_redacted=redacted,
+                payload_redacted=(metadata_only or redacted),
             )
         )
 

@@ -98,6 +98,11 @@ class CascadeConfig:
             if key in data:
                 setattr(config, key, data[key])
 
+        if config.trace_content not in {"metadata_only", "full"}:
+            raise ValueError(
+                "trace_content must be 'metadata_only' or 'full'"
+            )
+
         capability_map = data.get("capability_map", {})
         if not isinstance(capability_map, dict):
             raise ValueError("capability_map must be an object")
