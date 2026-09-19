@@ -154,8 +154,8 @@ def render_markdown_report(report: dict[str, Any]) -> str:
         "",
         "## Configuration results",
         "",
-        "| Configuration | Verified success | Weighted usage | Model tokens | Wall time (ms) |",
-        "|---|---:|---:|---:|---:|",
+        "| Configuration | Verified success | pass@1 | pass@3 | Weighted usage | Model tokens | Wall time (ms) |",
+        "|---|---:|---:|---:|---:|---:|---:|",
     ]
     for config, raw in sorted(summary.items()):
         if not isinstance(raw, dict):
@@ -163,6 +163,8 @@ def render_markdown_report(report: dict[str, Any]) -> str:
         lines.append(
             f"| {config} | "
             f"{float(raw.get('verified_success_rate', 0.0)) * 100:.2f}% | "
+            f"{float(raw.get('pass_at_1', 0.0)) * 100:.2f}% | "
+            f"{float(raw.get('pass_at_3', 0.0)) * 100:.2f}% | "
             f"{float(raw.get('weighted_usage_mean', 0.0)):.2f} | "
             f"{float(raw.get('total_model_tokens_mean', 0.0)):.2f} | "
             f"{float(raw.get('wall_time_ms_mean', 0.0)):.2f} |"
