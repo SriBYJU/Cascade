@@ -95,6 +95,7 @@ def run_release_benchmark(
         ephemeral=True,
         ignore_user_config=True,
     )
+    config = CascadeConfig.load(root)
     live_harness = EvaluationHarness(
         root,
         adapter=adapter,
@@ -106,6 +107,7 @@ def run_release_benchmark(
         repeats=repeats,
         output_dir=live_dir,
         effort=effort,
+        max_workers=config.max_concurrent_workers,
     )
 
     if live_report.get("measured") is not True:
@@ -126,7 +128,6 @@ def run_release_benchmark(
     scenarios = load_parallel_scenarios(
         root / "benchmarks" / "fixtures" / "parallel_live.json"
     )
-    config = CascadeConfig.load(root)
     parallel_report = ParallelLiveHarness(
         root,
         adapter=adapter,

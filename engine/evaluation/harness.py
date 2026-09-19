@@ -5,6 +5,7 @@ import platform
 import shutil
 import tempfile
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -515,9 +516,12 @@ class EvaluationHarness:
         output_dir: str | Path,
         model: str = "auto",
         effort: ReasoningEffort = ReasoningEffort.MEDIUM,
+        max_workers: int = 1,
     ) -> dict[str, Any]:
         if repeats < 1:
             raise ValueError("repeats must be >= 1")
+        if max_workers < 1:
+            raise ValueError("max_workers must be >= 1")
         unsupported = sorted(set(configs) - self.SUPPORTED_CONFIGS)
         if unsupported:
             raise ValueError(
@@ -534,7 +538,7 @@ class EvaluationHarness:
 
         out = Path(output_dir)
         out.mkdir(parents=True, exist_ok=True)
-        trials: list[TrialResult] = []
+        jobs: list[tuple[str, BenchmarkCase, int, str]] = []
         direct_configs = {"plain", "strongest", "efficient", "local"}
         for config in configs:
             direct_model = model
@@ -551,24 +555,31 @@ class EvaluationHarness:
                     direct_model = self.model_pool.local().model_id
             for case in cases:
                 for repeat in range(1, repeats + 1):
-                    if config in direct_configs:
-                        trial = self._plain_trial(
-                            case,
-                            repeat=repeat,
-                            output_dir=out,
-                            model=direct_model,
-                            effort=effort,
-                            config=config,
-                        )
-                    else:
-                        trial = self._cascade_trial(
-                            case,
-                            repeat=repeat,
-                            output_dir=out,
-                            model=model,
-                            config=config,
-                        )
-                    trials.append(trial)
+                    jobs.append((config, case, repeat, direct_model))
+
+        def execute(
+            job: tuple[str, BenchmarkCase, int, str],
+        ) -> TrialResult:
+            config, case, repeat, direct_model = job
+            if config in direct_configs:
+                return self._plain_trial(
+                    case,
+                    repeat=repeat,
+                    output_dir=out,
+                    model=direct_model,
+                    effort=effort,
+                    config=config,
+                )
+            return self._cascade_trial(
+                case,
+                repeat=repeat,
+                output_dir=out,
+                model=model,
+                config=config,
+            )
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            trials = list(executor.map(execute, jobs))
 
         summary = aggregate_trials(trials)
         report = {
@@ -581,6 +592,7 @@ class EvaluationHarness:
             "model": model,
             "reasoning_effort": effort.value,
             "repeats": repeats,
+            "trial_workers": max_workers,
             "configs": configs,
             "model_pool": (
                 self.model_pool.snapshot()

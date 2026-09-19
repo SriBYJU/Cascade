@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0.dev0 — 2026-09-19
+## 0.1.0 — 2026-09-19
 
 Initial implementation from the Final Master Handoff:
 
@@ -30,4 +30,4 @@ Initial implementation from the Final Master Handoff:
 - one-command `optimizer release-benchmark` evidence bundle
 - beginner README walkthrough and `optimizer tutorial` terminal guide
 
-The remaining non-synthetic release evidence is the repeated authenticated real-model benchmark. No performance savings are claimed until that report exists.
+Performance claims remain gated on retained, repeated authenticated benchmark evidence; this release does not claim an unmeasured savings percentage.
