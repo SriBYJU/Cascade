@@ -113,6 +113,7 @@ def test_quick_explore_build_and_deep_routes():
 def test_evidence_preserves_file_and_line_provenance(tmp_path: Path):
     lines = [f"line {i}" for i in range(1, 31)]
     lines[19] = "def target_symbol():"
+    lines[20] = "    pass"
     (tmp_path / "module.py").write_text("\n".join(lines) + "\n")
     repo_map = build_repo_map(tmp_path)
     evidence = collect_evidence(repo_map, "target_symbol")

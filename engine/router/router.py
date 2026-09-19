@@ -44,9 +44,17 @@ class Router:
                 ],
             )
 
+        def adjusted_score(candidate):
+            raw = route_score(candidate, features)
+            tier_distance = (
+                CapabilityRegistry.order(candidate.capability)
+                - CapabilityRegistry.order(floor)
+            )
+            return raw - 0.08 * tier_distance
+
         utility, profile = max(
             [
-                (route_score(candidate, features), candidate)
+                (adjusted_score(candidate), candidate)
                 for candidate in self.registry.available(floor)
             ],
             key=lambda item: item[0],
@@ -75,6 +83,10 @@ class Router:
             f"minimum safe capability={floor.value}",
             f"selected {profile.capability.value} with utility={utility:.3f}",
         ]
+        if profile.capability != floor:
+            why.append(
+                "higher tier won after capability-distance penalty"
+            )
         if features.has_strong_validation:
             why.append("strong deterministic validation lowers retry risk")
         if selected_affinity > 0:
