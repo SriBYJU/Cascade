@@ -106,3 +106,54 @@ def test_public_claim_unlocks_only_with_release_grade_metadata():
     assert "release-grade measured token reduction" in render_savings(
         result
     )
+
+
+def test_savings_exposes_hypothesis_formulas_and_profile_weights():
+    report = _report()
+    report["model_pool"] = [
+        {
+            "model_id": "fast",
+            "capability": "quick",
+            "cost_weight": 0.05,
+        },
+        {
+            "model_id": "frontier",
+            "capability": "critical",
+            "cost_weight": 1.0,
+        },
+    ]
+
+    result = savings_summary(report)
+
+    assert result["token_savings_formula"].startswith("100 * (1 -")
+    assert result["weighted_usage_savings_formula"].startswith(
+        "100 * (1 -"
+    )
+    definition = result["weighted_usage_definition"]
+    assert definition["version"] == "cascade-weighted-usage-v1"
+    assert definition["head_weight"] == 1.0
+    assert definition["route_cost_weights"] == {
+        "quick": 0.05,
+        "critical": 1.0,
+    }
+    assert "not an OpenAI billing or Codex quota formula" in (
+        definition["note"]
+    )
+
+
+def test_release_grade_render_includes_evidence_backed_headlines():
+    report = _report()
+    report["case_ids"] = [f"case-{index}" for index in range(20)]
+    report["summary"]["plain"]["trials"] = 60
+    report["summary"]["cascade"]["trials"] = 60
+    report["environment"] = {"python": "3.12"}
+    report["policy_lock"] = {"digest": "abc"}
+
+    rendered = render_savings(savings_summary(report))
+
+    assert "EVIDENCE-BACKED HEADLINE" in rendered
+    assert "Cascade saves 63.0% of total model tokens" in rendered
+    assert "Cascade saves 70.0% of weighted model usage" in rendered
+    assert "TOKEN FORMULA:" in rendered
+    assert "USAGE FORMULA:" in rendered
+
