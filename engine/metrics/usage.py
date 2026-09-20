@@ -3,6 +3,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
+CAPABILITY_USAGE_WEIGHTS: dict[str, float] = {
+    "quick": 0.20,
+    "explore": 0.25,
+    "build": 0.50,
+    "debug": 0.70,
+    "deep": 0.85,
+    "critical": 1.00,
+}
+
+
 @dataclass(slots=True)
 class UsageTotals:
     head_input_tokens: int = 0
