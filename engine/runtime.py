@@ -25,6 +25,7 @@ from .context.retrieval import (
     estimate_context_tokens,
 )
 from .metrics.route_regret import best_known_capability, route_regret
+from .metrics.usage import CAPABILITY_USAGE_WEIGHTS
 from .observability.redaction import metadata_only_payload
 from .router.capability_registry import CapabilityRegistry
 from .router.classifier import classify_step
@@ -1568,16 +1569,10 @@ DIFF
                 totals["worker_input_tokens"] += worker_input
                 totals["worker_output_tokens"] += worker_output
                 capability_name = event.payload.get("capability")
-                weight = 1.0
-                if isinstance(capability_name, str):
-                    try:
-                        capability = Capability(capability_name)
-                    except ValueError:
-                        capability = None
-                    if capability is not None:
-                        weight = float(
-                            self.registry.resolve(capability).cost_weight
-                        )
+                weight = CAPABILITY_USAGE_WEIGHTS.get(
+                    str(capability_name),
+                    1.0,
+                )
                 totals["weighted_usage"] += (
                     worker_input + worker_output
                 ) * weight
@@ -1637,14 +1632,13 @@ DIFF
         totals["weighted_usage_definition"] = {
             "version": "cascade-weighted-usage-v1",
             "formula": (
-                "head_tokens*1.0 + sum(worker_tokens*route_cost_weight)"
+                "head_tokens*1.0 + "
+                "sum(worker_tokens*capability_usage_weight)"
             ),
             "head_weight": 1.0,
-            "route_cost_weights": {
-                profile.capability.value: float(profile.cost_weight)
-                for profile in self.registry.all()
-                if profile.capability != Capability.NO_MODEL
-            },
+            "capability_usage_weights": dict(
+                CAPABILITY_USAGE_WEIGHTS
+            ),
             "note": (
                 "This is Cascade's hypothesis-derived normalized model-use "
                 "metric, not a provider billing or quota formula."
