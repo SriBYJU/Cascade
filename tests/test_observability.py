@@ -208,3 +208,49 @@ def test_stats_renderer_has_visual_sections():
     assert "MODEL USAGE" in text
     assert "ROUTING" in text
     assert "EXECUTION" in text
+
+
+def test_stats_renderer_shows_evidence_backed_savings():
+    text = render_stats(
+        {
+            "head_tokens": 100,
+            "worker_input_tokens": 40,
+            "worker_output_tokens": 10,
+            "total_model_tokens": 150,
+            "weighted_usage": 120.0,
+            "measured_savings_report": (
+                ".cascade/release-benchmark/live/report.json"
+            ),
+            "measured_savings": {
+                "baseline": "plain",
+                "token_savings_percent": 42.3,
+                "weighted_usage_savings_percent": 55.1,
+                "candidate_verified_success_percent": 98.0,
+                "baseline_verified_success_percent": 98.0,
+                "cases": 23,
+                "repeats": 3,
+                "public_token_claim_eligible": True,
+                "public_weighted_usage_claim_eligible": True,
+            },
+            "weighted_usage_definition": {
+                "version": "cascade-weighted-usage-v1",
+                "formula": (
+                    "head_tokens*1.0 + "
+                    "sum(worker_tokens*route_cost_weight)"
+                ),
+                "route_cost_weights": {
+                    "quick": 0.05,
+                    "critical": 1.0,
+                },
+                "note": "normalized hypothesis metric",
+            },
+        }
+    )
+
+    assert "EVIDENCE-BACKED SAVINGS" in text
+    assert "CASCADE SAVES 42.3% OF TOTAL MODEL TOKENS VS PLAIN" in text
+    assert "CASCADE SAVES 55.1% OF WEIGHTED MODEL USAGE VS PLAIN" in text
+    assert "23 cases × 3 repeats" in text
+    assert "USAGE HYPOTHESIS" in text
+    assert "quick=0.05" in text
+
