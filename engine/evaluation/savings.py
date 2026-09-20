@@ -350,7 +350,7 @@ def render_savings(summary: dict[str, Any]) -> str:
                 ),
                 "",
                 (
-                    "CLAIM STATUS: release-grade measured reduction "
+                    "CLAIM STATUS: release-grade measured token reduction "
                     "with equal-or-better verified success."
                 ),
             ]
