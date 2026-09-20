@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..metrics.usage import CAPABILITY_USAGE_WEIGHTS
+
 
 def _number(value: object) -> float:
     if isinstance(value, (int, float)):
@@ -177,19 +179,6 @@ def savings_summary(
         weighted_claim_eligible and release_grade_evidence
     )
 
-    model_pool = report.get("model_pool")
-    route_cost_weights: dict[str, float] = {}
-    if isinstance(model_pool, list):
-        for row in model_pool:
-            if not isinstance(row, dict):
-                continue
-            capability = row.get("capability")
-            cost_weight = row.get("cost_weight")
-            if isinstance(capability, str) and isinstance(
-                cost_weight, (int, float)
-            ):
-                route_cost_weights[capability] = float(cost_weight)
-
     return {
         "measured": True,
         "baseline": baseline,
@@ -209,10 +198,13 @@ def savings_summary(
         "weighted_usage_definition": {
             "version": "cascade-weighted-usage-v1",
             "formula": (
-                "head_tokens*1.0 + sum(worker_tokens*route_cost_weight)"
+                "head_tokens*1.0 + "
+                "sum(worker_tokens*capability_usage_weight)"
             ),
             "head_weight": 1.0,
-            "route_cost_weights": route_cost_weights,
+            "capability_usage_weights": dict(
+                CAPABILITY_USAGE_WEIGHTS
+            ),
             "note": (
                 "Hypothesis-derived normalized model-use metric; it is "
                 "not an OpenAI billing or Codex quota formula."
@@ -341,7 +333,7 @@ def render_savings(summary: dict[str, Any]) -> str:
                 ),
                 (
                     "USAGE MODEL: head tokens × 1.0 + worker tokens × "
-                    "the active route/model cost weight."
+                    "the Cascade v1 capability usage weight."
                 ),
                 (
                     "NOTE: weighted model usage is Cascade's "
