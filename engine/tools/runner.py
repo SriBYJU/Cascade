@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import shutil
 import subprocess
 import sys
 import time
@@ -22,7 +21,6 @@ def _resolve_command(command: Sequence[str]) -> list[str]:
     resolved = list(command)
     if (
         resolved[0] in {"python", "python3"}
-        and shutil.which(resolved[0]) is None
         and Path(sys.executable).is_file()
     ):
         resolved[0] = sys.executable
