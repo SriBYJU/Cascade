@@ -25,6 +25,7 @@ from .context.retrieval import (
     estimate_context_tokens,
 )
 from .metrics.route_regret import best_known_capability, route_regret
+from .metrics.usage import CAPABILITY_USAGE_WEIGHTS
 from .observability.redaction import metadata_only_payload
 from .router.capability_registry import CapabilityRegistry
 from .router.classifier import classify_step
@@ -1568,15 +1569,7 @@ DIFF
                 totals["worker_input_tokens"] += worker_input
                 totals["worker_output_tokens"] += worker_output
                 capability_name = event.payload.get("capability")
-                capability_weights = {
-                    "quick": 0.20,
-                    "explore": 0.25,
-                    "build": 0.50,
-                    "debug": 0.70,
-                    "deep": 0.85,
-                    "critical": 1.00,
-                }
-                weight = capability_weights.get(
+                weight = CAPABILITY_USAGE_WEIGHTS.get(
                     str(capability_name),
                     1.0,
                 )
@@ -1636,4 +1629,19 @@ DIFF
         }
         totals["cache"] = self.cache.stats()
         totals["prompt_cache_affinity"] = self.prompt_affinity.stats()
+        totals["weighted_usage_definition"] = {
+            "version": "cascade-weighted-usage-v1",
+            "formula": (
+                "head_tokens*1.0 + "
+                "sum(worker_tokens*capability_usage_weight)"
+            ),
+            "head_weight": 1.0,
+            "capability_usage_weights": dict(
+                CAPABILITY_USAGE_WEIGHTS
+            ),
+            "note": (
+                "This is Cascade's hypothesis-derived normalized model-use "
+                "metric, not a provider billing or quota formula."
+            ),
+        }
         return totals

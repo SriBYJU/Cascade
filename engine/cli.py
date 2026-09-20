@@ -149,9 +149,20 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--json", action="store_true")
     p = sub.add_parser(
         "stats",
-        help="report head and total model usage plus routing outcomes",
+        help=(
+            "report model usage, routing outcomes, and measured savings "
+            "when benchmark evidence is available"
+        ),
     )
     p.add_argument("--json", action="store_true")
+    p.add_argument(
+        "--benchmark-report",
+        help=(
+            "measured report.json to use for evidence-backed savings; "
+            "defaults to .cascade/release-benchmark/live/report.json "
+            "when that file exists"
+        ),
+    )
     sub.add_parser("models", help="show resolved capability profile")
 
     p = sub.add_parser("cache", help="inspect or clear exact cache")
@@ -476,6 +487,24 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "stats":
         stats = runtime.stats()
+        canonical_report = (
+            repo / ".cascade" / "release-benchmark" / "live" / "report.json"
+        )
+        report_path: Path | None = None
+        if args.benchmark_report:
+            requested = Path(args.benchmark_report)
+            report_path = (
+                requested
+                if requested.is_absolute()
+                else repo / requested
+            )
+        elif canonical_report.exists():
+            report_path = canonical_report
+
+        if report_path is not None:
+            report = load_report(report_path)
+            stats["measured_savings"] = savings_summary(report)
+            stats["measured_savings_report"] = str(report_path)
         if args.json:
             _print(stats)
         else:

@@ -180,6 +180,37 @@ For synthetic/public fixtures where publishing full model/tool content is intent
 
 Cascade reports the master-plan north-star metric as **verified work per 1,000 weighted model tokens**. It is derived from deterministic verified-success rate divided by mean weighted model usage; it is an internal optimization metric, not a universal scientific unit. Savings reports show the percentage change in VWET against the selected baseline alongside raw token, weighted-usage, context-transfer, wall-time, and quality changes.
 
+## Savings formulas and weighted-usage hypothesis
+
+Raw token savings are directly measured:
+
+```text
+token savings % =
+  100 × (1 - Cascade total model tokens / plain total model tokens)
+```
+
+Cascade also reports the hypothesis-derived weighted model-use metric:
+
+```text
+weighted usage =
+  head tokens × 1.0
+  + Σ(worker tokens × active route/model cost weight)
+
+weighted usage savings % =
+  100 × (1 - Cascade weighted usage / plain weighted usage)
+```
+
+The route/model cost weights are taken from the active model profiles and are
+preserved in the benchmark report. This makes the metric auditable and lets the
+experiment test the orchestration hypothesis that delegating routine work away
+from the expensive head reduces scarce high-tier model use. It is not claimed
+to be OpenAI's billing formula or a direct Codex quota formula.
+
+`optimizer stats` exposes the active weighting definition. If
+`.cascade/release-benchmark/live/report.json` exists, it also attaches the
+measured savings result automatically; another report can be selected with
+`--benchmark-report`.
+
 
 ## Public-claim threshold
 

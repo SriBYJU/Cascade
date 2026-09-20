@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..metrics.usage import CAPABILITY_USAGE_WEIGHTS
+
 
 def _number(value: object) -> float:
     if isinstance(value, (int, float)):
@@ -185,6 +187,29 @@ def savings_summary(
         "cases": case_count,
         "repeats": repeats,
         "source_commit": source_commit,
+        "token_savings_formula": (
+            "100 * (1 - candidate_total_model_tokens / "
+            "baseline_total_model_tokens)"
+        ),
+        "weighted_usage_savings_formula": (
+            "100 * (1 - candidate_weighted_usage / "
+            "baseline_weighted_usage)"
+        ),
+        "weighted_usage_definition": {
+            "version": "cascade-weighted-usage-v1",
+            "formula": (
+                "head_tokens*1.0 + "
+                "sum(worker_tokens*capability_usage_weight)"
+            ),
+            "head_weight": 1.0,
+            "capability_usage_weights": dict(
+                CAPABILITY_USAGE_WEIGHTS
+            ),
+            "note": (
+                "Hypothesis-derived normalized model-use metric; it is "
+                "not an OpenAI billing or Codex quota formula."
+            ),
+        },
         "token_savings_percent": token_savings,
         "weighted_usage_savings_percent": weighted_savings,
         "wall_time_savings_percent": wall_savings,
@@ -277,9 +302,44 @@ def render_savings(summary: dict[str, Any]) -> str:
         f"Source commit: {summary.get('source_commit') or 'unknown'}",
     ]
 
-    if summary.get("public_token_claim_eligible"):
+    public_token = summary.get("public_token_claim_eligible")
+    public_weighted = summary.get(
+        "public_weighted_usage_claim_eligible"
+    )
+    if public_token or public_weighted:
+        lines.extend(["", "EVIDENCE-BACKED HEADLINE"])
+        if public_token:
+            lines.append(
+                "Cascade saves "
+                f"{_fmt_percent(token)} of total model tokens vs "
+                f"{baseline} at equal-or-better verified success."
+            )
+        if public_weighted:
+            lines.append(
+                "Cascade saves "
+                f"{_fmt_percent(weighted)} of weighted model usage vs "
+                f"{baseline} under cascade-weighted-usage-v1."
+            )
         lines.extend(
             [
+                "",
+                (
+                    "TOKEN FORMULA: 100 × (1 - Cascade total tokens / "
+                    "plain total tokens)"
+                ),
+                (
+                    "USAGE FORMULA: 100 × (1 - Cascade weighted usage / "
+                    "plain weighted usage)"
+                ),
+                (
+                    "USAGE MODEL: head tokens × 1.0 + worker tokens × "
+                    "the Cascade v1 capability usage weight."
+                ),
+                (
+                    "NOTE: weighted model usage is Cascade's "
+                    "hypothesis-derived normalized metric, not an OpenAI "
+                    "billing or Codex quota formula."
+                ),
                 "",
                 (
                     "CLAIM STATUS: release-grade measured token reduction "

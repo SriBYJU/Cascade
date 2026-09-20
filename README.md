@@ -257,7 +257,7 @@ optimizer status
   includes routing, timings, token metrics, validation, retries/escalations, and
   provenance, but never source excerpts, prompts, stdout/stderr, or worker prose.
 - `why` explains the most recent route choice.
-- `stats` shows model tokens, weighted usage, cached input, context transfer, tool/agent calls, retries, and escalations.
+- `stats` shows model tokens, profile-weighted usage, cached input, context transfer, tool/agent calls, retries, and escalations. If a measured release benchmark is present, it also prints the evidence-backed `Cascade saves X%` token and weighted-usage headlines.
 - `status` shows persisted local state and resumable work.
 
 ### 7. Apply a verified change
@@ -280,6 +280,15 @@ For ordinary runs:
 
 ```bash
 optimizer stats
+```
+
+After a release benchmark, `optimizer stats` automatically reads
+`.cascade/release-benchmark/live/report.json` when present and adds the
+release-grade savings headline. You can also point it at another measured
+report explicitly:
+
+```bash
+optimizer stats --benchmark-report .cascade/benchmarks/live/report.json
 ```
 
 For a reproducible A/B benchmark against plain Codex:
@@ -419,7 +428,7 @@ Sidecars: budget manager, exact cache, single-flight, worktree manager, write-se
 | `optimizer status` | Current checkpoints, cache, and budget reservations. |
 | `optimizer trace` | Structured local execution trace. |
 | `optimizer why` | Explain the most recent route decision. |
-| `optimizer stats` | Head-model and total-model usage plus routing outcomes. |
+| `optimizer stats` | Head/worker/total model usage, active usage-weight hypothesis, routing outcomes, and evidence-backed savings when a measured report is available. |
 | `optimizer models` | Runtime capability profile. |
 | `optimizer cache` | Inspect or clear exact cache. |
 | `optimizer benchmark` | Run reproducible local benchmark fixtures. |
@@ -504,7 +513,33 @@ When a live benchmark contains both `plain` and `cascade`, Cascade automatically
 optimizer savings .cascade/benchmarks/live/report.json
 ```
 
-The summary reports token savings, weighted model-use savings, head-model savings, context-transfer savings, wall-time savings, VWET, verified-success change, cache delta, matched comparisons, and the exact source commit. Cascade can show measured deltas from smaller experiments, but it only marks a **public headline claim** as release-grade when the report has at least 20 cases × 3 repeats, matched baseline/candidate trials, exact source-commit/environment/policy metadata, fewer tokens, and equal-or-better verified success.
+The summary reports token savings, weighted model-use savings, head-model savings, context-transfer savings, wall-time savings, VWET, verified-success change, cache delta, matched comparisons, and the exact source commit.
+
+The two headline formulas are intentionally explicit:
+
+```text
+token savings % =
+  100 × (1 - Cascade total model tokens / plain total model tokens)
+
+weighted usage savings % =
+  100 × (1 - Cascade weighted model usage / plain weighted model usage)
+
+Cascade weighted model usage =
+  head tokens × 1.0
+  + Σ(worker tokens × active route/model cost weight)
+```
+
+The second metric is the **Cascade weighted-usage hypothesis**: a normalized
+way to account for expensive-model usage when work is delegated to cheaper
+capability tiers. The active weights come from the benchmark's model profiles,
+so the report preserves exactly which weights were used. It is **not** presented
+as OpenAI's billing formula or as a direct Codex quota formula.
+
+Cascade can show measured deltas from smaller experiments, but it only marks a
+**public headline claim** as release-grade when the report has at least 20 cases
+× 3 repeats, matched baseline/candidate trials, exact
+source-commit/environment/policy metadata, fewer measured usage units, and
+equal-or-better verified success.
 
 
 ## Release gate

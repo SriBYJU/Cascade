@@ -262,6 +262,113 @@ def render_stats(stats: dict[str, Any]) -> str:
         f"  AGENT CALLS: {int(stats.get('agent_calls', 0))}",
         f"  TRAJECTORY STEPS: {int(stats.get('trajectory_steps', 0))}",
     ]
+    savings = stats.get("measured_savings")
+    if isinstance(savings, dict):
+        token_savings = savings.get("token_savings_percent")
+        weighted_savings = savings.get(
+            "weighted_usage_savings_percent"
+        )
+        baseline = str(savings.get("baseline", "plain"))
+        candidate_quality = float(
+            savings.get("candidate_verified_success_percent", 0.0)
+        )
+        baseline_quality = float(
+            savings.get("baseline_verified_success_percent", 0.0)
+        )
+        cases = int(savings.get("cases", 0))
+        repeats = int(savings.get("repeats", 0))
+        lines.extend(["", "EVIDENCE-BACKED SAVINGS"])
+        if (
+            savings.get("public_token_claim_eligible")
+            and isinstance(token_savings, (int, float))
+        ):
+            lines.append(
+                "  CASCADE SAVES "
+                f"{float(token_savings):.1f}% OF TOTAL MODEL TOKENS "
+                f"VS {baseline.upper()}"
+            )
+        elif isinstance(token_savings, (int, float)):
+            lines.append(
+                "  TOKEN REDUCTION: "
+                f"{float(token_savings):.1f}% "
+                "(not public-claim eligible)"
+            )
+        if (
+            savings.get("public_weighted_usage_claim_eligible")
+            and isinstance(weighted_savings, (int, float))
+        ):
+            lines.append(
+                "  CASCADE SAVES "
+                f"{float(weighted_savings):.1f}% OF WEIGHTED MODEL "
+                f"USAGE VS {baseline.upper()}"
+            )
+        elif isinstance(weighted_savings, (int, float)):
+            lines.append(
+                "  WEIGHTED-USAGE REDUCTION: "
+                f"{float(weighted_savings):.1f}% "
+                "(not public-claim eligible)"
+            )
+        lines.extend(
+            [
+                (
+                    "  VERIFIED SUCCESS: "
+                    f"{candidate_quality:.1f}% vs {baseline_quality:.1f}%"
+                ),
+                (
+                    "  EVIDENCE: "
+                    f"{cases} cases × {repeats} repeats"
+                ),
+                (
+                    "  TOKEN FORMULA: 100 × "
+                    "(1 - Cascade tokens / Plain tokens)"
+                ),
+                (
+                    "  USAGE FORMULA: 100 × "
+                    "(1 - Cascade weighted usage / Plain weighted usage)"
+                ),
+                (
+                    "  USAGE MODEL: head×1.0 + "
+                    "Σ(worker tokens×active route/model cost weight)"
+                ),
+                (
+                    "  NOTE: weighted usage is Cascade's normalized "
+                    "hypothesis metric, not provider billing/quota usage."
+                ),
+            ]
+        )
+        report_path = stats.get("measured_savings_report")
+        if report_path:
+            lines.append(f"  REPORT: {report_path}")
+
+    definition = stats.get("weighted_usage_definition")
+    if isinstance(definition, dict):
+        lines.extend(
+            [
+                "",
+                "USAGE HYPOTHESIS",
+                (
+                    "  VERSION: "
+                    f"{definition.get('version', 'unknown')}"
+                ),
+                (
+                    "  FORMULA: "
+                    f"{definition.get('formula', 'unknown')}"
+                ),
+            ]
+        )
+        weights = definition.get("route_cost_weights")
+        if isinstance(weights, dict) and weights:
+            rendered_weights = ", ".join(
+                f"{name}={float(value):.2f}"
+                for name, value in sorted(weights.items())
+                if isinstance(value, (int, float))
+            )
+            if rendered_weights:
+                lines.append(f"  ACTIVE WEIGHTS: {rendered_weights}")
+        note = definition.get("note")
+        if note:
+            lines.append(f"  NOTE: {note}")
+
     cache = stats.get("cache")
     if isinstance(cache, dict):
         lines.extend(
