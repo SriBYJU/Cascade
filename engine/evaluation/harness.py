@@ -59,7 +59,13 @@ class EvaluationHarness:
 
     def _source_commit(self) -> str | None:
         result = run_command(
-            ["git", "rev-parse", "HEAD"],
+            [
+                "git",
+                "-c",
+                f"safe.directory={self.repo_root.as_posix()}",
+                "rev-parse",
+                "HEAD",
+            ],
             self.repo_root,
             timeout_seconds=10,
             output_cap_chars=2000,

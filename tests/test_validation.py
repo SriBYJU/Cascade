@@ -10,11 +10,7 @@ def test_command_timeout(tmp_path: Path):
     assert result.timed_out
 
 
-def test_command_uses_running_python_when_path_has_no_python(
-    tmp_path: Path,
-    monkeypatch,
-):
-    monkeypatch.setattr("engine.tools.runner.shutil.which", lambda _: None)
+def test_command_uses_running_python_for_portable_python_alias(tmp_path: Path):
     result = run_command(
         ["python", "-c", "print('fallback-ok')"],
         tmp_path,

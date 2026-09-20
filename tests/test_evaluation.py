@@ -101,6 +101,27 @@ def test_aggregate_trials_empty():
     assert aggregate_trials([]) == {}
 
 
+def test_source_commit_is_recorded_from_fixture_repository(tmp_path: Path):
+    case = BenchmarkCase(
+        case_id="source-commit",
+        category="search",
+        task="find value.txt",
+        files={"value.txt": "value\n"},
+        write_paths=[],
+        acceptance=[],
+        answer_contains=["value.txt"],
+    )
+    EvaluationHarness._init_fixture(case, tmp_path)
+
+    source_commit = EvaluationHarness(
+        tmp_path,
+        adapter=FakeEditingAdapter(),
+    )._source_commit()
+
+    assert source_commit is not None
+    assert len(source_commit) == 40
+
+
 def test_live_harness_records_trial_worker_count(tmp_path: Path):
     case = BenchmarkCase(
         case_id="workers",
