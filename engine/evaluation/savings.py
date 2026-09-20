@@ -177,6 +177,19 @@ def savings_summary(
         weighted_claim_eligible and release_grade_evidence
     )
 
+    model_pool = report.get("model_pool")
+    route_cost_weights: dict[str, float] = {}
+    if isinstance(model_pool, list):
+        for row in model_pool:
+            if not isinstance(row, dict):
+                continue
+            capability = row.get("capability")
+            cost_weight = row.get("cost_weight")
+            if isinstance(capability, str) and isinstance(
+                cost_weight, (int, float)
+            ):
+                route_cost_weights[capability] = float(cost_weight)
+
     return {
         "measured": True,
         "baseline": baseline,
@@ -185,6 +198,26 @@ def savings_summary(
         "cases": case_count,
         "repeats": repeats,
         "source_commit": source_commit,
+        "token_savings_formula": (
+            "100 * (1 - candidate_total_model_tokens / "
+            "baseline_total_model_tokens)"
+        ),
+        "weighted_usage_savings_formula": (
+            "100 * (1 - candidate_weighted_usage / "
+            "baseline_weighted_usage)"
+        ),
+        "weighted_usage_definition": {
+            "version": "cascade-weighted-usage-v1",
+            "formula": (
+                "head_tokens*1.0 + sum(worker_tokens*route_cost_weight)"
+            ),
+            "head_weight": 1.0,
+            "route_cost_weights": route_cost_weights,
+            "note": (
+                "Hypothesis-derived normalized model-use metric; it is "
+                "not an OpenAI billing or Codex quota formula."
+            ),
+        },
         "token_savings_percent": token_savings,
         "weighted_usage_savings_percent": weighted_savings,
         "wall_time_savings_percent": wall_savings,
@@ -277,12 +310,47 @@ def render_savings(summary: dict[str, Any]) -> str:
         f"Source commit: {summary.get('source_commit') or 'unknown'}",
     ]
 
-    if summary.get("public_token_claim_eligible"):
+    public_token = summary.get("public_token_claim_eligible")
+    public_weighted = summary.get(
+        "public_weighted_usage_claim_eligible"
+    )
+    if public_token or public_weighted:
+        lines.extend(["", "EVIDENCE-BACKED HEADLINE"])
+        if public_token:
+            lines.append(
+                "Cascade saves "
+                f"{_fmt_percent(token)} of total model tokens vs "
+                f"{baseline} at equal-or-better verified success."
+            )
+        if public_weighted:
+            lines.append(
+                "Cascade saves "
+                f"{_fmt_percent(weighted)} of weighted model usage vs "
+                f"{baseline} under cascade-weighted-usage-v1."
+            )
         lines.extend(
             [
                 "",
                 (
-                    "CLAIM STATUS: release-grade measured token reduction "
+                    "TOKEN FORMULA: 100 × (1 - Cascade total tokens / "
+                    "plain total tokens)"
+                ),
+                (
+                    "USAGE FORMULA: 100 × (1 - Cascade weighted usage / "
+                    "plain weighted usage)"
+                ),
+                (
+                    "USAGE MODEL: head tokens × 1.0 + worker tokens × "
+                    "the active route/model cost weight."
+                ),
+                (
+                    "NOTE: weighted model usage is Cascade's "
+                    "hypothesis-derived normalized metric, not an OpenAI "
+                    "billing or Codex quota formula."
+                ),
+                "",
+                (
+                    "CLAIM STATUS: release-grade measured reduction "
                     "with equal-or-better verified success."
                 ),
             ]
