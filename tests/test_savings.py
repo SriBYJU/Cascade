@@ -132,9 +132,13 @@ def test_savings_exposes_hypothesis_formulas_and_profile_weights():
     definition = result["weighted_usage_definition"]
     assert definition["version"] == "cascade-weighted-usage-v1"
     assert definition["head_weight"] == 1.0
-    assert definition["route_cost_weights"] == {
-        "quick": 0.05,
-        "critical": 1.0,
+    assert definition["capability_usage_weights"] == {
+        "quick": 0.20,
+        "explore": 0.25,
+        "build": 0.50,
+        "debug": 0.70,
+        "deep": 0.85,
+        "critical": 1.00,
     }
     assert "not an OpenAI billing or Codex quota formula" in (
         definition["note"]
