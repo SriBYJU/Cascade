@@ -1568,18 +1568,16 @@ DIFF
                 totals["worker_input_tokens"] += worker_input
                 totals["worker_output_tokens"] += worker_output
                 capability_name = event.payload.get("capability")
-                capability_weights = {
-                    "quick": 0.20,
-                    "explore": 0.25,
-                    "build": 0.50,
-                    "debug": 0.70,
-                    "deep": 0.85,
-                    "critical": 1.00,
-                }
-                weight = capability_weights.get(
-                    str(capability_name),
-                    1.0,
-                )
+                weight = 1.0
+                if isinstance(capability_name, str):
+                    try:
+                        capability = Capability(capability_name)
+                    except ValueError:
+                        capability = None
+                    if capability is not None:
+                        weight = float(
+                            self.registry.resolve(capability).cost_weight
+                        )
                 totals["weighted_usage"] += (
                     worker_input + worker_output
                 ) * weight
@@ -1636,4 +1634,20 @@ DIFF
         }
         totals["cache"] = self.cache.stats()
         totals["prompt_cache_affinity"] = self.prompt_affinity.stats()
+        totals["weighted_usage_definition"] = {
+            "version": "cascade-weighted-usage-v1",
+            "formula": (
+                "head_tokens*1.0 + sum(worker_tokens*route_cost_weight)"
+            ),
+            "head_weight": 1.0,
+            "route_cost_weights": {
+                profile.capability.value: float(profile.cost_weight)
+                for profile in self.registry.all()
+                if profile.capability != Capability.NO_MODEL
+            },
+            "note": (
+                "This is Cascade's hypothesis-derived normalized model-use "
+                "metric, not a provider billing or quota formula."
+            ),
+        }
         return totals
